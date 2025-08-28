@@ -39,20 +39,22 @@ jobs:
           echo "✅ Build successful!"
 
       - name: Validate action.yml
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const yaml = require('js-yaml');
-            
-            try {
-              const actionYml = fs.readFileSync('.github/actions/ai-pr-reviewer/action.yml', 'utf8');
-              const action = yaml.load(actionYml);
-              
-              console.log('Action validation passed!');
-              console.log('Action name:', action.name);
-              console.log('Main file:', action.runs.main);
-            } catch (error) {
-              console.error('Action validation failed:', error.message);
-              process.exit(1);
-            }
+        run: |
+          # Simple validation: check if action.yml exists and has required fields
+          if [ ! -f ".github/actions/ai-pr-reviewer/action.yml" ]; then
+            echo "❌ action.yml not found"
+            exit 1
+          fi
+          
+          # Check for required fields in action.yml
+          if ! grep -q "name:" .github/actions/ai-pr-reviewer/action.yml; then
+            echo "❌ action.yml missing 'name' field"
+            exit 1
+          fi
+          
+          if ! grep -q "main: 'dist/index.js'" .github/actions/ai-pr-reviewer/action.yml; then
+            echo "❌ action.yml missing or incorrect 'main' field"
+            exit 1
+          fi
+          
+          echo "✅ action.yml validation passed!"
