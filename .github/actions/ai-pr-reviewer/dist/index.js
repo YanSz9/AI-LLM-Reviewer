@@ -30148,6 +30148,56 @@ ${JSON.stringify(doc, null, 2)}`;
 function redactSecrets(text) {
   return text.replace(/(api[_-]?key|secret|token|password)\s*[:=]\s*['\"]?[^'\"\n]+/gi, "$1: [REDACTED]").replace(/AIza[0-9A-Za-z\-_]{35}/g, "[REDACTED_GOOGLE_KEY]");
 }
+function extractJsonFromResponse(content) {
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[1]);
+      } catch (e2) {
+        const jsonStart = content.indexOf("{");
+        const jsonEnd = content.lastIndexOf("}");
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          try {
+            return JSON.parse(content.substring(jsonStart, jsonEnd + 1));
+          } catch (e3) {
+            console.warn("Failed to parse JSON response, using fallback");
+            return {
+              summary: "Failed to parse AI response properly",
+              risks: ["Could not extract structured review"],
+              actions: ["Please check the AI response format"],
+              checks: {
+                correctness: "Unable to analyze",
+                security: "Unable to analyze",
+                performance: "Unable to analyze",
+                tests: "Unable to analyze",
+                style: "Unable to analyze",
+                docs: "Unable to analyze"
+              },
+              inline: []
+            };
+          }
+        }
+      }
+    }
+    return {
+      summary: "AI response received but could not be parsed as JSON",
+      risks: ["Response parsing failed"],
+      actions: ["Check AI model response format"],
+      checks: {
+        correctness: "Parse error",
+        security: "Parse error",
+        performance: "Parse error",
+        tests: "Parse error",
+        style: "Parse error",
+        docs: "Parse error"
+      },
+      inline: []
+    };
+  }
+}
 async function getPRDiff(octokit, owner, repo, pr) {
   const files = await octokit.pulls.listFiles({ owner, repo, pull_number: pr, per_page: 300 });
   const parts = [];
@@ -30183,21 +30233,23 @@ ${rules}
 Diff (unified):
 ${diff}
 
-Deliver this JSON object only:
+IMPORTANT: You must respond with ONLY a valid JSON object. Do not wrap it in markdown code blocks or add any additional text.
+
+Respond with this exact JSON structure:
 {
-  "summary": string, // high-level assessment
-  "risks": string[], // key risks found
-  "actions": string[], // prioritized actions for the author
-  "checks": { // pass/fail checklist
-    "correctness": string,
-    "security": string,
-    "performance": string,
-    "tests": string,
-    "style": string,
-    "docs": string
+  "summary": "high-level assessment of the changes",
+  "risks": ["list of key security/correctness risks found"],
+  "actions": ["prioritized list of actions for the author"],
+  "checks": {
+    "correctness": "PASS/FAIL with brief explanation",
+    "security": "PASS/FAIL with brief explanation",
+    "performance": "PASS/FAIL with brief explanation",
+    "tests": "PASS/FAIL with brief explanation",
+    "style": "PASS/FAIL with brief explanation",
+    "docs": "PASS/FAIL with brief explanation"
   },
-  "inline": [ // OPTIONAL: inline suggestions (file-level) rendered in the main comment
-    { "file": string, "issue": string, "suggestion": string }
+  "inline": [
+    { "file": "filename", "issue": "description of issue", "suggestion": "recommended fix" }
   ]
 }`;
 }
@@ -30218,7 +30270,7 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
     if (!res.ok) throw new Error(`OpenAI error ${res.status}: ${await res.text()}`);
     const data = await res.json();
     const content = data.choices?.[0]?.message?.content || "{}";
-    return JSON.parse(content);
+    return extractJsonFromResponse(content);
   }
   if (provider === "anthropic") {
     const key = process.env.ANTHROPIC_API_KEY;
@@ -30240,7 +30292,7 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
     if (!res.ok) throw new Error(`Anthropic error ${res.status}: ${await res.text()}`);
     const data = await res.json();
     const content = data.content?.[0]?.text || "{}";
-    return JSON.parse(content);
+    return extractJsonFromResponse(content);
   }
   if (provider === "azure-openai") {
     const key = process.env.AZURE_OPENAI_API_KEY;
@@ -30258,7 +30310,7 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
     if (!res.ok) throw new Error(`Azure OpenAI error ${res.status}: ${await res.text()}`);
     const data = await res.json();
     const content = data.choices?.[0]?.message?.content || "{}";
-    return JSON.parse(content);
+    return extractJsonFromResponse(content);
   }
   if (provider === "ollama") {
     const host = process.env.OLLAMA_HOST || "http://localhost:11434";
@@ -30278,7 +30330,7 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
     if (!res.ok) throw new Error(`Ollama error ${res.status}: ${await res.text()}`);
     const data = await res.json();
     const content = data.response || "{}";
-    return JSON.parse(content);
+    return extractJsonFromResponse(content);
   }
   throw new Error(`Provider ${provider} not supported. Available: openai, anthropic, azure-openai, ollama`);
 }
