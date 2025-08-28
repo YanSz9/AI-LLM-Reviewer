@@ -40,6 +40,18 @@ class UserService {
         user.email = newEmail; // No null check - potential crash
         return user;
     }
+    
+    // New method with performance and security issues
+    getAllUsersWithPasswords() {
+        // Exposes sensitive data - security risk!
+        return this.users.map(user => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            password: user.password, // Exposing passwords!
+            apiKey: user.apiKey      // Exposing API keys!
+        }));
+    }
 }
 
 export default UserService;
