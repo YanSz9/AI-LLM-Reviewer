@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Octokit } from '@octokit/rest';
-import fs from 'node:fs';
-import path from 'node:path';
-import yaml from 'js-yaml';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as yaml from 'js-yaml';
 
 const MAX_FILE_BYTES = 200_000; // skip huge diffs (per file)
 const BINARY_EXT = [

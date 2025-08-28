@@ -2,9 +2,8 @@
   "name": "ai-pr-reviewer",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js"
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --format=cjs"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",

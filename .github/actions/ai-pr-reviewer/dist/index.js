@@ -4252,7 +4252,7 @@ var require_symbols2 = __commonJS({
 var require_webidl = __commonJS({
   "node_modules/undici/lib/fetch/webidl.js"(exports2, module2) {
     "use strict";
-    var { types: types2 } = require("util");
+    var { types } = require("util");
     var { hasOwn, toUSVString } = require_util2();
     var webidl = {};
     webidl.converters = {};
@@ -4417,7 +4417,7 @@ var require_webidl = __commonJS({
           });
         }
         const result = {};
-        if (!types2.isProxy(O)) {
+        if (!types.isProxy(O)) {
           const keys2 = Object.keys(O);
           for (const key of keys2) {
             const typedKey = keyConverter(key);
@@ -4543,14 +4543,14 @@ var require_webidl = __commonJS({
       return x;
     };
     webidl.converters.ArrayBuffer = function(V, opts = {}) {
-      if (webidl.util.Type(V) !== "Object" || !types2.isAnyArrayBuffer(V)) {
+      if (webidl.util.Type(V) !== "Object" || !types.isAnyArrayBuffer(V)) {
         throw webidl.errors.conversionFailed({
           prefix: `${V}`,
           argument: `${V}`,
           types: ["ArrayBuffer"]
         });
       }
-      if (opts.allowShared === false && types2.isSharedArrayBuffer(V)) {
+      if (opts.allowShared === false && types.isSharedArrayBuffer(V)) {
         throw webidl.errors.exception({
           header: "ArrayBuffer",
           message: "SharedArrayBuffer is not allowed."
@@ -4559,14 +4559,14 @@ var require_webidl = __commonJS({
       return V;
     };
     webidl.converters.TypedArray = function(V, T, opts = {}) {
-      if (webidl.util.Type(V) !== "Object" || !types2.isTypedArray(V) || V.constructor.name !== T.name) {
+      if (webidl.util.Type(V) !== "Object" || !types.isTypedArray(V) || V.constructor.name !== T.name) {
         throw webidl.errors.conversionFailed({
           prefix: `${T.name}`,
           argument: `${V}`,
           types: [T.name]
         });
       }
-      if (opts.allowShared === false && types2.isSharedArrayBuffer(V.buffer)) {
+      if (opts.allowShared === false && types.isSharedArrayBuffer(V.buffer)) {
         throw webidl.errors.exception({
           header: "ArrayBuffer",
           message: "SharedArrayBuffer is not allowed."
@@ -4575,13 +4575,13 @@ var require_webidl = __commonJS({
       return V;
     };
     webidl.converters.DataView = function(V, opts = {}) {
-      if (webidl.util.Type(V) !== "Object" || !types2.isDataView(V)) {
+      if (webidl.util.Type(V) !== "Object" || !types.isDataView(V)) {
         throw webidl.errors.exception({
           header: "DataView",
           message: "Object is not a DataView."
         });
       }
-      if (opts.allowShared === false && types2.isSharedArrayBuffer(V.buffer)) {
+      if (opts.allowShared === false && types.isSharedArrayBuffer(V.buffer)) {
         throw webidl.errors.exception({
           header: "ArrayBuffer",
           message: "SharedArrayBuffer is not allowed."
@@ -4590,13 +4590,13 @@ var require_webidl = __commonJS({
       return V;
     };
     webidl.converters.BufferSource = function(V, opts = {}) {
-      if (types2.isAnyArrayBuffer(V)) {
+      if (types.isAnyArrayBuffer(V)) {
         return webidl.converters.ArrayBuffer(V, opts);
       }
-      if (types2.isTypedArray(V)) {
+      if (types.isTypedArray(V)) {
         return webidl.converters.TypedArray(V, V.constructor);
       }
-      if (types2.isDataView(V)) {
+      if (types.isDataView(V)) {
         return webidl.converters.DataView(V, opts);
       }
       throw new TypeError(`Could not convert ${V} to a BufferSource.`);
@@ -4907,7 +4907,7 @@ var require_file = __commonJS({
   "node_modules/undici/lib/fetch/file.js"(exports2, module2) {
     "use strict";
     var { Blob: Blob2, File: NativeFile } = require("buffer");
-    var { types: types2 } = require("util");
+    var { types } = require("util");
     var { kState } = require_symbols2();
     var { isBlobLike } = require_util2();
     var { webidl } = require_webidl();
@@ -5016,7 +5016,7 @@ var require_file = __commonJS({
         if (isBlobLike(V)) {
           return webidl.converters.Blob(V, { strict: false });
         }
-        if (ArrayBuffer.isView(V) || types2.isAnyArrayBuffer(V)) {
+        if (ArrayBuffer.isView(V) || types.isAnyArrayBuffer(V)) {
           return webidl.converters.BufferSource(V, opts);
         }
       }
@@ -5060,7 +5060,7 @@ var require_file = __commonJS({
             s = convertLineEndingsNative(s);
           }
           bytes.push(encoder.encode(s));
-        } else if (types2.isAnyArrayBuffer(element) || types2.isTypedArray(element)) {
+        } else if (types.isAnyArrayBuffer(element) || types.isTypedArray(element)) {
           if (!element.buffer) {
             bytes.push(new Uint8Array(element));
           } else {
@@ -11959,7 +11959,7 @@ var require_response = __commonJS({
     var { URLSerializer } = require_dataURL();
     var { kHeadersList, kConstruct } = require_symbols();
     var assert = require("assert");
-    var { types: types2 } = require("util");
+    var { types } = require("util");
     var ReadableStream = globalThis.ReadableStream || require("stream/web").ReadableStream;
     var textEncoder = new TextEncoder("utf-8");
     var Response = class _Response {
@@ -12262,7 +12262,7 @@ var require_response = __commonJS({
       if (isBlobLike(V)) {
         return webidl.converters.Blob(V, { strict: false });
       }
-      if (types2.isArrayBuffer(V) || types2.isTypedArray(V) || types2.isDataView(V)) {
+      if (types.isArrayBuffer(V) || types.isTypedArray(V) || types.isDataView(V)) {
         return webidl.converters.BufferSource(V);
       }
       if (util.isFormDataLike(V)) {
@@ -14368,7 +14368,7 @@ var require_util4 = __commonJS({
     var { getEncoding } = require_encoding();
     var { DOMException: DOMException2 } = require_constants2();
     var { serializeAMimeType, parseMIMEType } = require_dataURL();
-    var { types: types2 } = require("util");
+    var { types } = require("util");
     var { StringDecoder } = require("string_decoder");
     var { btoa } = require("buffer");
     var staticPropertyDescriptors = {
@@ -14398,7 +14398,7 @@ var require_util4 = __commonJS({
               });
             }
             isFirstChunk = false;
-            if (!done && types2.isUint8Array(value)) {
+            if (!done && types.isUint8Array(value)) {
               bytes.push(value);
               if ((fr[kLastProgressEventFired] === void 0 || Date.now() - fr[kLastProgressEventFired] >= 50) && !fr[kAborted]) {
                 fr[kLastProgressEventFired] = Date.now();
@@ -16764,7 +16764,7 @@ var require_websocket = __commonJS({
     var { ByteParser } = require_receiver();
     var { kEnumerableProperty, isBlobLike } = require_util();
     var { getGlobalDispatcher } = require_global2();
-    var { types: types2 } = require("util");
+    var { types } = require("util");
     var experimentalWarned = false;
     var WebSocket = class _WebSocket extends EventTarget {
       #events = {
@@ -16911,7 +16911,7 @@ var require_websocket = __commonJS({
           socket.write(buffer, () => {
             this.#bufferedAmount -= value.byteLength;
           });
-        } else if (types2.isArrayBuffer(data)) {
+        } else if (types.isArrayBuffer(data)) {
           const value = Buffer.from(data);
           const frame = new WebsocketFrameSend(value);
           const buffer = frame.createFrame(opcodes.BINARY);
@@ -17133,7 +17133,7 @@ var require_websocket = __commonJS({
         if (isBlobLike(V)) {
           return webidl.converters.Blob(V, { strict: false });
         }
-        if (ArrayBuffer.isView(V) || types2.isAnyArrayBuffer(V)) {
+        if (ArrayBuffer.isView(V) || types.isAnyArrayBuffer(V)) {
           return webidl.converters.BufferSource(V);
         }
       }
@@ -23974,8 +23974,8 @@ var require_fast_content_type_parse = __commonJS({
 });
 
 // src/index.ts
-var core2 = __toESM(require_core(), 1);
-var github = __toESM(require_github(), 1);
+var core2 = __toESM(require_core());
+var github = __toESM(require_github());
 
 // node_modules/@octokit/rest/node_modules/universal-user-agent/index.js
 function getUserAgent() {
@@ -27525,8 +27525,8 @@ var Octokit2 = Octokit.plugin(requestLog, legacyRestEndpointMethods, paginateRes
 );
 
 // src/index.ts
-var import_node_fs = __toESM(require("node:fs"), 1);
-var import_node_path = __toESM(require("node:path"), 1);
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
 
 // node_modules/js-yaml/dist/js-yaml.mjs
 function isNothing(subject) {
@@ -30104,51 +30104,12 @@ function renamed(from, to) {
     throw new Error("Function yaml." + from + " is removed in js-yaml 4. Use yaml." + to + " instead, which is now safe by default.");
   };
 }
-var Type = type;
-var Schema = schema;
-var FAILSAFE_SCHEMA = failsafe;
-var JSON_SCHEMA = json;
-var CORE_SCHEMA = core;
-var DEFAULT_SCHEMA = _default;
 var load = loader.load;
 var loadAll = loader.loadAll;
 var dump = dumper.dump;
-var YAMLException = exception;
-var types = {
-  binary,
-  float,
-  map,
-  null: _null,
-  pairs,
-  set,
-  timestamp,
-  bool,
-  int,
-  merge: merge2,
-  omap,
-  seq,
-  str
-};
 var safeLoad = renamed("safeLoad", "load");
 var safeLoadAll = renamed("safeLoadAll", "loadAll");
 var safeDump = renamed("safeDump", "dump");
-var jsYaml = {
-  Type,
-  Schema,
-  FAILSAFE_SCHEMA,
-  JSON_SCHEMA,
-  CORE_SCHEMA,
-  DEFAULT_SCHEMA,
-  load,
-  loadAll,
-  dump,
-  YAMLException,
-  types,
-  safeLoad,
-  safeLoadAll,
-  safeDump
-};
-var js_yaml_default = jsYaml;
 
 // src/index.ts
 var MAX_FILE_BYTES = 2e5;
@@ -30169,13 +30130,13 @@ var BINARY_EXT = [
   ".bin"
 ];
 function isBinary2(filename) {
-  const ext = import_node_path.default.extname(filename).toLowerCase();
+  const ext = path.extname(filename).toLowerCase();
   return BINARY_EXT.includes(ext);
 }
 function loadRules(rulesPath) {
   try {
-    if (!import_node_fs.default.existsSync(rulesPath)) return "";
-    const doc = js_yaml_default.load(import_node_fs.default.readFileSync(rulesPath, "utf8"));
+    if (!fs.existsSync(rulesPath)) return "";
+    const doc = load(fs.readFileSync(rulesPath, "utf8"));
     return `
 Repo rules & conventions:
 ${JSON.stringify(doc, null, 2)}`;
