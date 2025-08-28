@@ -1,0 +1,49 @@
+name: AI PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ["**"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    if: >-
+      !contains(github.event.pull_request.title, '[skip ai]') &&
+      !contains(join(github.event.pull_request.labels.*.name, ','), 'skip-ai')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: |
+          cd .github/actions/ai-pr-reviewer
+          npm ci --ignore-scripts
+
+      - name: Run AI review
+        uses: ./.github/actions/ai-pr-reviewer
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          provider: "openai" # or "anthropic", "azure-openai", "ollama"
+          model: "gpt-4o-mini" # customize
+          max-tokens: "2500"
+          temperature: "0.2"
+          rules-path: ".github/ai-reviewer/rules.yml"
+          include-tests: "true"
+          include-style: "true"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          OLLAMA_HOST: ${{ secrets.OLLAMA_HOST }}

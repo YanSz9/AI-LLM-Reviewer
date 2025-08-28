@@ -1,0 +1,35 @@
+languages:
+  primary: [typescript, javascript]
+  secondary: [python, java, csharp]
+
+style:
+  eslint: true
+  prettier: true
+  naming: camelCase for vars, PascalCase for types/classes
+
+security:
+  secrets: forbid new plaintext keys
+  deps: require review for new high-risk deps
+
+tests:
+  require: true
+  coverage_hint: 70
+
+architecture:
+  layering: ui -> services -> data
+  boundaries: no cross-layer imports
+
+documentation:
+  readme: keep updated with major changes
+  comments: require for public APIs
+  jsdoc: use for exported functions
+
+performance:
+  async: prefer async/await over callbacks
+  memory: avoid memory leaks in event handlers
+  bundling: check bundle size impact
+
+quality:
+  complexity: keep functions under 50 lines
+  nesting: max 3 levels deep
+  duplication: extract common patterns

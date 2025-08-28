@@ -1,0 +1,38 @@
+name: 'AI PR Reviewer'
+description: 'Posts an AI-powered review on pull requests'
+author: 'you'
+inputs:
+  github-token:
+    description: 'GITHUB_TOKEN'
+    required: true
+  provider:
+    description: 'LLM provider: openai|anthropic|azure-openai|ollama'
+    required: false
+    default: 'openai'
+  model:
+    description: 'Model name for provider'
+    required: false
+    default: 'gpt-4o-mini'
+  max-tokens:
+    description: 'Max tokens in completion'
+    required: false
+    default: '2500'
+  temperature:
+    description: 'Sampling temperature'
+    required: false
+    default: '0.2'
+  rules-path:
+    description: 'Path to YAML rules file'
+    required: false
+    default: '.github/ai-reviewer/rules.yml'
+  include-tests:
+    description: 'Ask the model to suggest tests'
+    required: false
+    default: 'true'
+  include-style:
+    description: 'Ask the model to check style/linters'
+    required: false
+    default: 'true'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
