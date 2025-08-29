@@ -30201,6 +30201,7 @@ function extractJsonFromResponse(content) {
 async function getPRDiff(octokit, owner, repo, pr) {
   const files = await octokit.pulls.listFiles({ owner, repo, pull_number: pr, per_page: 300 });
   const parts = [];
+  const fileInfo = [];
   for (const f of files.data) {
     if (!f.patch) continue;
     if (isBinary2(f.filename)) continue;
@@ -30210,17 +30211,27 @@ async function getPRDiff(octokit, owner, repo, pr) {
     parts.push(`FILE: ${f.filename}
 STATUS: ${f.status}
 ${patch}`);
+    fileInfo.push({
+      filename: f.filename,
+      patch,
+      additions: f.additions ?? 0,
+      deletions: f.deletions ?? 0
+    });
   }
-  return parts.join("\n\n---\n\n");
+  return {
+    diffText: parts.join("\n\n---\n\n"),
+    files: fileInfo
+  };
 }
 function buildPrompt(opts) {
-  const { title, body, author, base, head, rules, diff, includeTests, includeStyle } = opts;
+  const { title, body, author, base, head, rules, diff, includeTests, includeStyle, files, enableInlineComments, maxInlineComments } = opts;
+  const fileList = files.map((f) => `- ${f.filename} (+${f.additions}/-${f.deletions})`).join("\n");
+  const inlineInstructions = enableInlineComments ? `For inline comments, analyze the diff and provide line-specific feedback. Focus on the most critical issues first. Limit to ${maxInlineComments} inline comments maximum.` : "Do not provide inline comments, focus on the overall summary and checks.";
   return `You are a senior code reviewer bot. Provide a thoughtful, concise, and actionable review.
 - Focus: correctness, security, performance, readability, and maintainability.
 - Only comment on real issues; avoid nitpicks.
 - Propose concrete fixes with code snippets when helpful.
 - If you are uncertain, say so explicitly.
-- Use Markdown. Structure with headings and bullet points.
 - Keep tone friendly and specific.
 
 PR metadata:
@@ -30230,10 +30241,15 @@ PR metadata:
 - Description: ${body || "(none)"}
 ${rules}
 
+Files changed:
+${fileList}
+
 Diff (unified):
 ${diff}
 
 IMPORTANT: You must respond with ONLY a valid JSON object. Do not wrap it in markdown code blocks or add any additional text.
+
+${inlineInstructions}
 
 Respond with this exact JSON structure:
 {
@@ -30242,14 +30258,19 @@ Respond with this exact JSON structure:
   "actions": ["prioritized list of actions for the author"],
   "checks": {
     "correctness": "PASS/FAIL with brief explanation",
-    "security": "PASS/FAIL with brief explanation",
+    "security": "PASS/FAIL with brief explanation", 
     "performance": "PASS/FAIL with brief explanation",
     "tests": "PASS/FAIL with brief explanation",
     "style": "PASS/FAIL with brief explanation",
     "docs": "PASS/FAIL with brief explanation"
   },
   "inline": [
-    { "file": "filename", "issue": "description of issue", "suggestion": "recommended fix" }
+    { 
+      "path": "exact filename from diff",
+      "line": "line number in the NEW version of the file", 
+      "side": "RIGHT",
+      "body": "specific issue and suggested fix for this line"
+    }
   ]
 }`;
 }
@@ -30337,8 +30358,7 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
 function renderMarkdown(review) {
   const checks = review.checks || {};
   const list = (arr) => arr && arr.length ? arr.map((x) => `- ${x}`).join("\n") : "- (none)";
-  const inline = (review.inline || []).map((i) => `- **${i.file}** \u2014 ${i.issue}
-  - Suggestion: ${i.suggestion}`).join("\n");
+  const inlineCount = review.inline?.length || 0;
   return `### \u{1F916} AI Review Summary
 
 ${review.summary || "No summary provided."}
@@ -30358,8 +30378,8 @@ ${list(review.actions)}
 - Style: ${checks.style || "n/a"}
 - Docs: ${checks.docs || "n/a"}
 
-**Inline Notes**
-${inline || "- (none)"}
+**Inline Comments**
+${inlineCount > 0 ? `\u{1F4CD} ${inlineCount} specific issues identified and commented on individual lines` : "- No line-specific issues found"}
 `;
 }
 async function run() {
@@ -30372,6 +30392,8 @@ async function run() {
     const rulesPath = core2.getInput("rules-path");
     const includeTests = core2.getInput("include-tests") === "true";
     const includeStyle = core2.getInput("include-style") === "true";
+    const enableInlineComments = core2.getInput("inline-comments") === "true";
+    const maxInlineComments = parseInt(core2.getInput("max-inline-comments") || "10", 10);
     const octokit = new Octokit2({ auth: token });
     const ctx = github.context;
     const pr = ctx.payload.pull_request;
@@ -30381,7 +30403,8 @@ async function run() {
     const number = pr.number;
     const { data: prData } = await octokit.pulls.get({ owner, repo, pull_number: number });
     const rules = loadRules(rulesPath);
-    const diff = redactSecrets(await getPRDiff(octokit, owner, repo, number));
+    const diffData = await getPRDiff(octokit, owner, repo, number);
+    const diff = redactSecrets(diffData.diffText);
     const prompt = buildPrompt({
       title: prData.title,
       body: prData.body || "",
@@ -30391,18 +30414,46 @@ async function run() {
       rules,
       diff,
       includeTests,
-      includeStyle
+      includeStyle,
+      files: diffData.files,
+      enableInlineComments,
+      maxInlineComments
     });
     const review = await callLLM(provider, model, prompt, maxTokens, temperature);
-    const body = renderMarkdown(review);
-    await octokit.pulls.createReview({
+    const { data: reviewData } = await octokit.pulls.createReview({
       owner,
       repo,
       pull_number: number,
       event: "COMMENT",
-      body
+      body: renderMarkdown(review)
     });
-    core2.info("Review posted successfully.");
+    if (enableInlineComments && review.inline && Array.isArray(review.inline) && review.inline.length > 0) {
+      const commentsToCreate = review.inline.slice(0, maxInlineComments);
+      let successCount = 0;
+      for (const comment of commentsToCreate) {
+        if (comment.path && comment.line && comment.body) {
+          try {
+            await octokit.pulls.createReviewComment({
+              owner,
+              repo,
+              pull_number: number,
+              body: `\u{1F916} **AI Review**: ${comment.body}`,
+              path: comment.path,
+              line: parseInt(comment.line.toString()),
+              side: comment.side || "RIGHT",
+              commit_id: prData.head.sha
+            });
+            successCount++;
+            core2.info(`Added inline comment for ${comment.path}:${comment.line}`);
+          } catch (error) {
+            core2.warning(`Failed to add inline comment for ${comment.path}:${comment.line}: ${error.message}`);
+          }
+        }
+      }
+      core2.info(`Review posted successfully with ${successCount}/${commentsToCreate.length} inline comments.`);
+    } else {
+      core2.info("Review posted successfully (inline comments disabled).");
+    }
   } catch (err) {
     core2.setFailed(err?.message || String(err));
   }
