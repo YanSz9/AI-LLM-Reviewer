@@ -42,6 +42,8 @@ jobs:
           rules-path: ".github/ai-reviewer/rules.yml"
           include-tests: "true"
           include-style: "true"
+          inline-comments: "true" # Enable GitHub Copilot-style inline comments
+          max-inline-comments: "15" # Limit number of inline comments
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

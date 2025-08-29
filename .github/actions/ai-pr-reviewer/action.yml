@@ -33,6 +33,14 @@ inputs:
     description: 'Ask the model to check style/linters'
     required: false
     default: 'true'
+  inline-comments:
+    description: 'Enable inline comments on specific lines (like GitHub Copilot)'
+    required: false
+    default: 'true'
+  max-inline-comments:
+    description: 'Maximum number of inline comments to create'
+    required: false
+    default: '10'
 runs:
   using: 'node20'
   main: 'dist/index.js'
