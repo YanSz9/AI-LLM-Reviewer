@@ -94,52 +94,12 @@ async function getPRDiff(octokit: Octokit, owner: string, repo: string, pr: numb
   const parts: string[] = [];
   const fileInfo: Array<{filename: string, patch: string, additions: number, deletions: number}> = [];
   
-  // Filter and prioritize files
-  const filteredFiles = files.data
-    .filter(f => {
-      // Skip files without patches
-      if (!f.patch) return false;
-      // Skip binary files
-      if (isBinary(f.filename)) return false;
-      // Skip huge individual file changes
-      if ((f.changes ?? 0) > 5000) return false;
-      if ((f.additions ?? 0) + (f.deletions ?? 0) > 5000) return false;
-      
-      // Skip build artifacts and generated files
-      const skipPaths = [
-        'dist/',
-        'build/',
-        'node_modules/',
-        '.next/',
-        'target/',
-        'bin/',
-        'obj/',
-        'out/',
-        'coverage/',
-        '.nyc_output/',
-        'package-lock.json',
-        'yarn.lock',
-        'composer.lock'
-      ];
-      
-      if (skipPaths.some(path => f.filename.includes(path))) {
-        core.info(`Skipping build artifact: ${f.filename}`);
-        return false;
-      }
-      
-      return true;
-    })
-    // Prioritize source files over config/documentation
-    .sort((a, b) => {
-      const aIsSource = /\.(ts|js|tsx|jsx|py|java|c|cpp|cs|go|rs|php)$/.test(a.filename);
-      const bIsSource = /\.(ts|js|tsx|jsx|py|java|c|cpp|cs|go|rs|php)$/.test(b.filename);
-      if (aIsSource && !bIsSource) return -1;
-      if (!aIsSource && bIsSource) return 1;
-      return 0;
-    });
-  
-  for (const f of filteredFiles) {
-    const patch = f.patch!.length > MAX_FILE_BYTES ? f.patch!.slice(0, MAX_FILE_BYTES) + '\n[truncated]\n' : f.patch!;
+  for (const f of files.data) {
+    if (!f.patch) continue;
+    if (isBinary(f.filename)) continue;
+    if ((f.changes ?? 0) > 5000) continue; // extremely large file changes
+    if ((f.additions ?? 0) + (f.deletions ?? 0) > 5000) continue;
+    const patch = f.patch.length > MAX_FILE_BYTES ? f.patch.slice(0, MAX_FILE_BYTES) + '\n[truncated]\n' : f.patch;
     parts.push(`FILE: ${f.filename}\nSTATUS: ${f.status}\n${patch}`);
     
     // Store file info for inline comments
@@ -155,15 +115,13 @@ async function getPRDiff(octokit: Octokit, owner: string, repo: string, pr: numb
   
   // Estimate token count (rough approximation: 1 token ≈ 4 characters)
   const estimatedTokens = diffText.length / 4;
-  const MAX_DIFF_TOKENS = 3500; // Increased since we filter build artifacts
+  const MAX_DIFF_TOKENS = 2500; // Leave room for prompt and response
   
   if (estimatedTokens > MAX_DIFF_TOKENS) {
     // Truncate diff to stay within token limits
     const maxChars = MAX_DIFF_TOKENS * 4;
     diffText = diffText.slice(0, maxChars) + '\n\n[DIFF TRUNCATED DUE TO SIZE - Showing first ' + MAX_DIFF_TOKENS + ' tokens]';
     core.warning(`Diff truncated due to size: ${estimatedTokens} tokens > ${MAX_DIFF_TOKENS} limit`);
-  } else {
-    core.info(`Diff size: ${estimatedTokens.toFixed(0)} tokens (within ${MAX_DIFF_TOKENS} limit)`);
   }
   
   return {

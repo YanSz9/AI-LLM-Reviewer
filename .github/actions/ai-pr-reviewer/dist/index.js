@@ -30202,11 +30202,39 @@ async function getPRDiff(octokit, owner, repo, pr) {
   const files = await octokit.pulls.listFiles({ owner, repo, pull_number: pr, per_page: 300 });
   const parts = [];
   const fileInfo = [];
-  for (const f of files.data) {
-    if (!f.patch) continue;
-    if (isBinary2(f.filename)) continue;
-    if ((f.changes ?? 0) > 5e3) continue;
-    if ((f.additions ?? 0) + (f.deletions ?? 0) > 5e3) continue;
+  const filteredFiles = files.data.filter((f) => {
+    if (!f.patch) return false;
+    if (isBinary2(f.filename)) return false;
+    if ((f.changes ?? 0) > 5e3) return false;
+    if ((f.additions ?? 0) + (f.deletions ?? 0) > 5e3) return false;
+    const skipPaths = [
+      "dist/",
+      "build/",
+      "node_modules/",
+      ".next/",
+      "target/",
+      "bin/",
+      "obj/",
+      "out/",
+      "coverage/",
+      ".nyc_output/",
+      "package-lock.json",
+      "yarn.lock",
+      "composer.lock"
+    ];
+    if (skipPaths.some((path2) => f.filename.includes(path2))) {
+      core2.info(`Skipping build artifact: ${f.filename}`);
+      return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    const aIsSource = /\.(ts|js|tsx|jsx|py|java|c|cpp|cs|go|rs|php)$/.test(a.filename);
+    const bIsSource = /\.(ts|js|tsx|jsx|py|java|c|cpp|cs|go|rs|php)$/.test(b.filename);
+    if (aIsSource && !bIsSource) return -1;
+    if (!aIsSource && bIsSource) return 1;
+    return 0;
+  });
+  for (const f of filteredFiles) {
     const patch = f.patch.length > MAX_FILE_BYTES ? f.patch.slice(0, MAX_FILE_BYTES) + "\n[truncated]\n" : f.patch;
     parts.push(`FILE: ${f.filename}
 STATUS: ${f.status}
@@ -30218,8 +30246,18 @@ ${patch}`);
       deletions: f.deletions ?? 0
     });
   }
+  let diffText = parts.join("\n\n---\n\n");
+  const estimatedTokens = diffText.length / 4;
+  const MAX_DIFF_TOKENS = 3500;
+  if (estimatedTokens > MAX_DIFF_TOKENS) {
+    const maxChars = MAX_DIFF_TOKENS * 4;
+    diffText = diffText.slice(0, maxChars) + "\n\n[DIFF TRUNCATED DUE TO SIZE - Showing first " + MAX_DIFF_TOKENS + " tokens]";
+    core2.warning(`Diff truncated due to size: ${estimatedTokens} tokens > ${MAX_DIFF_TOKENS} limit`);
+  } else {
+    core2.info(`Diff size: ${estimatedTokens.toFixed(0)} tokens (within ${MAX_DIFF_TOKENS} limit)`);
+  }
   return {
-    diffText: parts.join("\n\n---\n\n"),
+    diffText,
     files: fileInfo
   };
 }
@@ -30227,49 +30265,45 @@ function buildPrompt(opts) {
   const { title, body, author, base, head, rules, diff, includeTests, includeStyle, files, enableInlineComments, maxInlineComments } = opts;
   const fileList = files.map((f) => `- ${f.filename} (+${f.additions}/-${f.deletions})`).join("\n");
   const inlineInstructions = enableInlineComments ? `For inline comments, analyze the diff and provide line-specific feedback. Focus on the most critical issues first. Limit to ${maxInlineComments} inline comments maximum.` : "Do not provide inline comments, focus on the overall summary and checks.";
-  return `You are a senior code reviewer bot. Provide a thoughtful, concise, and actionable review.
-- Focus: correctness, security, performance, readability, and maintainability.
-- Only comment on real issues; avoid nitpicks.
-- Propose concrete fixes with code snippets when helpful.
-- If you are uncertain, say so explicitly.
-- Keep tone friendly and specific.
+  return `You are a senior code reviewer. Provide thoughtful, actionable feedback on security, performance, code quality, and best practices.
 
-PR metadata:
-- Title: ${title}
-- Author: ${author}
-- From ${head} into ${base}
-- Description: ${body || "(none)"}
+- Focus: correctness, security, performance, readability, maintainability
+- Only comment on real issues; avoid nitpicks
+- Propose concrete fixes with code examples when helpful
+- Keep explanations clear and specific
+
+PR: ${title} by ${author} (${head} \u2192 ${base})
+${body ? `Description: ${body}` : ""}
 ${rules}
 
-Files changed:
-${fileList}
+Files: ${fileList}
 
-Diff (unified):
+Code diff:
 ${diff}
-
-IMPORTANT: You must respond with ONLY a valid JSON object. Do not wrap it in markdown code blocks or add any additional text.
 
 ${inlineInstructions}
 
-Respond with this exact JSON structure:
+IMPORTANT: You must respond with ONLY a valid JSON object. No markdown blocks, no extra text.
+
+Response format:
 {
-  "summary": "high-level assessment of the changes",
-  "risks": ["list of key security/correctness risks found"],
-  "actions": ["prioritized list of actions for the author"],
+  "summary": "Brief assessment of the changes with key findings",
+  "risks": ["List of security or correctness issues found"],
+  "actions": ["Prioritized list of specific actions to take"],
   "checks": {
-    "correctness": "PASS/FAIL with brief explanation",
-    "security": "PASS/FAIL with brief explanation", 
-    "performance": "PASS/FAIL with brief explanation",
-    "tests": "PASS/FAIL with brief explanation",
-    "style": "PASS/FAIL with brief explanation",
-    "docs": "PASS/FAIL with brief explanation"
+    "correctness": "PASS/FAIL - Brief explanation",
+    "security": "PASS/FAIL - Brief explanation", 
+    "performance": "PASS/FAIL - Brief explanation",
+    "tests": "PASS/FAIL - Brief explanation",
+    "style": "PASS/FAIL - Brief explanation",
+    "docs": "PASS/FAIL - Brief explanation"
   },
   "inline": [
     { 
-      "path": "exact filename from diff",
-      "line": "line number in the NEW version of the file", 
+      "path": "filename",
+      "line": "line number", 
       "side": "RIGHT",
-      "body": "specific issue and suggested fix for this line"
+      "body": "Issue description with specific fix suggestion"
     }
   ]
 }`;
@@ -30365,7 +30399,10 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: "You are an expert software reviewer." },
+          {
+            role: "system",
+            content: "You are a senior code reviewer focused on security, performance, and code quality. Always respond with valid JSON only."
+          },
           { role: "user", content: prompt }
         ],
         temperature,
