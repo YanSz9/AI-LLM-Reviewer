@@ -38,7 +38,7 @@ jobs:
           provider: "groq" # or "anthropic", "azure-openai", "ollama", "groq"
           model: "llama-3.1-8b-instant" 
           max-tokens: "2000" # Reduced to stay within limits
-          temperature: "0.3" # Slightly higher for more creative problem-solving
+          temperature: "0.2" # Slightly higher for more creative problem-solving
           rules-path: ".github/ai-reviewer/rules.yml"
           include-tests: "true"
           include-style: "true"
