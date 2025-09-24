@@ -4,12 +4,16 @@ class UserService {
     
     // Missing input validation - security issue
     createUser(userData) {
+        // New vulnerability: SQL injection risk
+        const query = `INSERT INTO users (name, email) VALUES ('${userData.name}', '${userData.email}')`;
+        
         const user = {
             id: Math.random().toString(),
             name: userData.name,
             email: userData.email,
             password: userData.password, // Storing plain text password - security risk!
             apiKey: "sk-1234567890abcdef", // Hardcoded API key - security risk!
+            adminToken: "admin_" + Math.random(), // Another hardcoded secret
             createdAt: new Date()
         };
         
@@ -51,6 +55,19 @@ class UserService {
             password: user.password, // Exposing passwords!
             apiKey: user.apiKey      // Exposing API keys!
         }));
+    }
+
+    // New function with multiple issues for Groq to analyze
+    authenticateUser(username, password) {
+        // Timing attack vulnerability
+        for (let user of this.users) {
+            if (user.name === username && user.password === password) {
+                // Logging sensitive data
+                console.log(`User ${username} authenticated with password: ${password}`);
+                return { token: "jwt-" + Math.random(), admin: user.name === "admin" };
+            }
+        }
+        return null;
     }
 }
 
