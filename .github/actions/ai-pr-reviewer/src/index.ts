@@ -131,49 +131,80 @@ function buildPrompt(opts: {
     `For inline comments, analyze the diff and provide line-specific feedback. Focus on the most critical issues first. Limit to ${maxInlineComments} inline comments maximum.` :
     'Do not provide inline comments, focus on the overall summary and checks.';
   
-  return `You are a senior code reviewer bot. Provide a thoughtful, concise, and actionable review.
-- Focus: correctness, security, performance, readability, and maintainability.
-- Only comment on real issues; avoid nitpicks.
-- Propose concrete fixes with code snippets when helpful.
-- If you are uncertain, say so explicitly.
-- Keep tone friendly and specific.
+  return `You are a senior software architect and security expert conducting a comprehensive code review. Your expertise includes:
+- Security vulnerability detection (OWASP Top 10, injection attacks, cryptographic issues)
+- Performance analysis (memory leaks, algorithmic complexity, async patterns)
+- Code quality assessment (maintainability, readability, SOLID principles)
+- Type safety and error handling best practices
 
-PR metadata:
+## REVIEW GUIDELINES:
+1. **Security**: Identify vulnerabilities with CVE references when possible. Explain attack vectors and provide specific remediation code.
+2. **Performance**: Analyze algorithmic complexity, memory usage, and suggest optimizations with benchmarks.
+3. **Code Quality**: Check for design patterns, code smells, and architectural concerns.
+4. **Type Safety**: Ensure proper TypeScript usage, null safety, and error boundaries.
+5. **Best Practices**: Verify industry standards, testing patterns, and documentation quality.
+
+## RESPONSE REQUIREMENTS:
+- Provide DETAILED explanations of WHY each issue is problematic
+- Include CONCRETE code examples for fixes
+- Prioritize issues by severity (Critical > High > Medium > Low)
+- Reference industry standards, security frameworks, or documentation
+- Suggest alternative approaches when applicable
+
+PR Context:
 - Title: ${title}
 - Author: ${author}
-- From ${head} into ${base}
+- Branch: ${head} → ${base}
 - Description: ${body || '(none)'}
 ${rules}
 
-Files changed:
+Files Modified:
 ${fileList}
 
-Diff (unified):
+Code Changes (Unified Diff):
 ${diff}
 
-IMPORTANT: You must respond with ONLY a valid JSON object. Do not wrap it in markdown code blocks or add any additional text.
+CRITICAL: Respond with ONLY valid JSON. No markdown blocks, no additional text.
 
+Analysis Instructions:
 ${inlineInstructions}
+
+For each issue found:
+- Explain the security/performance impact
+- Provide specific code fixes with examples
+- Reference relevant standards (OWASP, NIST, etc.)
+- Suggest testing approaches
+- Consider maintainability implications
 
 Respond with this exact JSON structure:
 {
-  "summary": "high-level assessment of the changes",
-  "risks": ["list of key security/correctness risks found"],
-  "actions": ["prioritized list of actions for the author"],
+  "summary": "Comprehensive assessment including architectural impact, security implications, and overall code quality",
+  "risks": [
+    "🔴 CRITICAL: [Vulnerability type] - [Detailed impact] - [Attack vector] - [Remediation priority]",
+    "🟡 HIGH: [Issue type] - [Business impact] - [Technical debt concern] - [Suggested timeline]",
+    "🟢 MEDIUM: [Code quality issue] - [Maintainability impact] - [Best practice violation]"
+  ],
+  "actions": [
+    "1. IMMEDIATE: [Critical security fix with code example]",
+    "2. SHORT-TERM: [Performance optimization with specific approach]", 
+    "3. REFACTOR: [Code quality improvement with design pattern suggestion]",
+    "4. TESTING: [Specific test cases needed with examples]",
+    "5. DOCUMENTATION: [Required documentation updates]"
+  ],
   "checks": {
-    "correctness": "PASS/FAIL with brief explanation",
-    "security": "PASS/FAIL with brief explanation", 
-    "performance": "PASS/FAIL with brief explanation",
-    "tests": "PASS/FAIL with brief explanation",
-    "style": "PASS/FAIL with brief explanation",
-    "docs": "PASS/FAIL with brief explanation"
+    "correctness": "PASS/FAIL - [Detailed analysis of logic, edge cases, error handling]",
+    "security": "PASS/FAIL - [OWASP compliance, vulnerability assessment, attack surface analysis]", 
+    "performance": "PASS/FAIL - [Algorithmic complexity, memory usage, bottleneck analysis]",
+    "tests": "PASS/FAIL - [Test coverage analysis, missing test cases, quality assessment]",
+    "style": "PASS/FAIL - [Code consistency, naming conventions, architectural patterns]",
+    "docs": "PASS/FAIL - [Documentation completeness, API docs, inline comments quality]"
   },
   "inline": [
     { 
       "path": "exact filename from diff",
       "line": "line number in the NEW version of the file", 
       "side": "RIGHT",
-      "body": "specific issue and suggested fix for this line"
+      "body": "🚨 [SEVERITY]: [Issue description] - [Why it's problematic] - [Specific fix with code example] - [Alternative approaches] - [Testing recommendations]"
     }
   ]
 }`;
@@ -274,7 +305,10 @@ async function callLLM(provider: string, model: string, prompt: string, maxToken
       body: JSON.stringify({
         model,
         messages: [ 
-          { role: 'system', content: 'You are an expert software reviewer.' }, 
+          { 
+            role: 'system', 
+            content: 'You are a senior software architect, security expert, and code reviewer with 15+ years of experience. You specialize in vulnerability detection, performance optimization, and maintainable code architecture. Provide detailed, actionable feedback with specific code examples and industry best practices.' 
+          }, 
           { role: 'user', content: prompt } 
         ],
         temperature,
@@ -292,30 +326,60 @@ async function callLLM(provider: string, model: string, prompt: string, maxToken
 
 function renderMarkdown(review: any): string {
   const checks = review.checks || {};
-  const list = (arr?: string[]) => (arr && arr.length ? arr.map(x => `- ${x}`).join('\n') : '- (none)');
+  const list = (arr?: string[]) => (arr && arr.length ? arr.map(x => `${x}`).join('\n\n') : '- No issues found');
   const inlineCount = review.inline?.length || 0;
 
-  return `### 🤖 AI Review Summary
+  // Count issues by severity
+  const criticalCount = review.risks?.filter((r: string) => r.includes('🔴 CRITICAL')).length || 0;
+  const highCount = review.risks?.filter((r: string) => r.includes('🟡 HIGH')).length || 0;
+  const mediumCount = review.risks?.filter((r: string) => r.includes('🟢 MEDIUM')).length || 0;
 
+  return `## 🤖 AI Code Review Analysis
+
+### 📊 Risk Assessment
+${criticalCount > 0 ? `🔴 **${criticalCount} Critical Issues**` : ''}${highCount > 0 ? ` 🟡 **${highCount} High Priority**` : ''}${mediumCount > 0 ? ` 🟢 **${mediumCount} Medium Priority**` : ''}
+
+### 📋 Executive Summary
 ${review.summary || 'No summary provided.'}
 
 ---
-**Key Risks**
+
+### 🚨 Security & Risk Analysis
 ${list(review.risks)}
 
-**Recommended Actions**
+---
+
+### ⚡ Action Plan
 ${list(review.actions)}
 
-**Checks**
-- Correctness: ${checks.correctness || 'n/a'}
-- Security: ${checks.security || 'n/a'}
-- Performance: ${checks.performance || 'n/a'}
-- Tests: ${checks.tests || 'n/a'}
-- Style: ${checks.style || 'n/a'}
-- Docs: ${checks.docs || 'n/a'}
+---
 
-**Inline Comments**
-${inlineCount > 0 ? `📍 ${inlineCount} specific issues identified and commented on individual lines` : '- No line-specific issues found'}
+### 🔍 Detailed Assessment
+
+#### ✅ Correctness
+${checks.correctness || 'Not analyzed'}
+
+#### 🛡️ Security
+${checks.security || 'Not analyzed'}
+
+#### ⚡ Performance  
+${checks.performance || 'Not analyzed'}
+
+#### 🧪 Testing
+${checks.tests || 'Not analyzed'}
+
+#### 🎨 Code Style
+${checks.style || 'Not analyzed'}
+
+#### 📚 Documentation
+${checks.docs || 'Not analyzed'}
+
+---
+
+### 💬 Line-by-Line Analysis
+${inlineCount > 0 ? `📍 **${inlineCount} specific issues** identified with detailed remediation suggestions` : '✅ No critical line-specific issues found'}
+
+> **Powered by ${review.model || 'AI'}** | Review completed with enhanced security and performance analysis
 `;
 }
 

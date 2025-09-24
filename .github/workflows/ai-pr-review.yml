@@ -37,8 +37,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           provider: "groq" # or "anthropic", "azure-openai", "ollama", "groq"
           model: "llama-3.1-8b-instant" # customize - for Groq use models like "llama3-8b-8192", "mixtral-8x7b-32768"
-          max-tokens: "2500"
-          temperature: "0.2"
+          max-tokens: "4000" # Increased for more detailed analysis
+          temperature: "0.3" # Slightly higher for more creative problem-solving
           rules-path: ".github/ai-reviewer/rules.yml"
           include-tests: "true"
           include-style: "true"
