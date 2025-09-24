@@ -234,15 +234,22 @@ async function callLLM(provider: string, model: string, prompt: string, maxToken
   if (provider === 'openai') {
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw new Error('OPENAI_API_KEY missing');
+    
+    // Check if model requires max_completion_tokens (newer models like gpt-5-mini)
+    const usesCompletionTokens = model.includes('gpt-5') || model.includes('o1-') || model.includes('gpt-4o-mini') || model.includes('gpt-4o');
+    const tokenParam = usesCompletionTokens ? 'max_completion_tokens' : 'max_tokens';
+    
+    const requestBody: any = {
+      model,
+      messages: [ { role: 'system', content: 'You are an expert software reviewer.' }, { role: 'user', content: prompt } ],
+      temperature,
+      [tokenParam]: maxTokens
+    };
+    
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        messages: [ { role: 'system', content: 'You are an expert software reviewer.' }, { role: 'user', content: prompt } ],
-        temperature,
-        max_tokens: maxTokens
-      })
+      body: JSON.stringify(requestBody)
     });
     if (!res.ok) throw new Error(`OpenAI error ${res.status}: ${await res.text()}`);
     const data = await res.json();
