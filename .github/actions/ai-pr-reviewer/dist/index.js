@@ -30202,11 +30202,39 @@ async function getPRDiff(octokit, owner, repo, pr) {
   const files = await octokit.pulls.listFiles({ owner, repo, pull_number: pr, per_page: 300 });
   const parts = [];
   const fileInfo = [];
-  for (const f of files.data) {
-    if (!f.patch) continue;
-    if (isBinary2(f.filename)) continue;
-    if ((f.changes ?? 0) > 5e3) continue;
-    if ((f.additions ?? 0) + (f.deletions ?? 0) > 5e3) continue;
+  const filteredFiles = files.data.filter((f) => {
+    if (!f.patch) return false;
+    if (isBinary2(f.filename)) return false;
+    if ((f.changes ?? 0) > 5e3) return false;
+    if ((f.additions ?? 0) + (f.deletions ?? 0) > 5e3) return false;
+    const skipPaths = [
+      "dist/",
+      "build/",
+      "node_modules/",
+      ".next/",
+      "target/",
+      "bin/",
+      "obj/",
+      "out/",
+      "coverage/",
+      ".nyc_output/",
+      "package-lock.json",
+      "yarn.lock",
+      "composer.lock"
+    ];
+    if (skipPaths.some((path2) => f.filename.includes(path2))) {
+      core2.info(`Skipping build artifact: ${f.filename}`);
+      return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    const aIsSource = /\.(ts|js|tsx|jsx|py|java|c|cpp|cs|go|rs|php)$/.test(a.filename);
+    const bIsSource = /\.(ts|js|tsx|jsx|py|java|c|cpp|cs|go|rs|php)$/.test(b.filename);
+    if (aIsSource && !bIsSource) return -1;
+    if (!aIsSource && bIsSource) return 1;
+    return 0;
+  });
+  for (const f of filteredFiles) {
     const patch = f.patch.length > MAX_FILE_BYTES ? f.patch.slice(0, MAX_FILE_BYTES) + "\n[truncated]\n" : f.patch;
     parts.push(`FILE: ${f.filename}
 STATUS: ${f.status}
@@ -30220,11 +30248,13 @@ ${patch}`);
   }
   let diffText = parts.join("\n\n---\n\n");
   const estimatedTokens = diffText.length / 4;
-  const MAX_DIFF_TOKENS = 2500;
+  const MAX_DIFF_TOKENS = 3500;
   if (estimatedTokens > MAX_DIFF_TOKENS) {
     const maxChars = MAX_DIFF_TOKENS * 4;
     diffText = diffText.slice(0, maxChars) + "\n\n[DIFF TRUNCATED DUE TO SIZE - Showing first " + MAX_DIFF_TOKENS + " tokens]";
     core2.warning(`Diff truncated due to size: ${estimatedTokens} tokens > ${MAX_DIFF_TOKENS} limit`);
+  } else {
+    core2.info(`Diff size: ${estimatedTokens.toFixed(0)} tokens (within ${MAX_DIFF_TOKENS} limit)`);
   }
   return {
     diffText,
