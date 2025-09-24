@@ -30220,7 +30220,7 @@ ${patch}`);
   }
   let diffText = parts.join("\n\n---\n\n");
   const estimatedTokens = diffText.length / 4;
-  const MAX_DIFF_TOKENS = 3e3;
+  const MAX_DIFF_TOKENS = 2500;
   if (estimatedTokens > MAX_DIFF_TOKENS) {
     const maxChars = MAX_DIFF_TOKENS * 4;
     diffText = diffText.slice(0, maxChars) + "\n\n[DIFF TRUNCATED DUE TO SIZE - Showing first " + MAX_DIFF_TOKENS + " tokens]";
@@ -30235,68 +30235,45 @@ function buildPrompt(opts) {
   const { title, body, author, base, head, rules, diff, includeTests, includeStyle, files, enableInlineComments, maxInlineComments } = opts;
   const fileList = files.map((f) => `- ${f.filename} (+${f.additions}/-${f.deletions})`).join("\n");
   const inlineInstructions = enableInlineComments ? `For inline comments, analyze the diff and provide line-specific feedback. Focus on the most critical issues first. Limit to ${maxInlineComments} inline comments maximum.` : "Do not provide inline comments, focus on the overall summary and checks.";
-  return `You are a senior software engineer and code quality expert. Provide comprehensive code enhancement recommendations covering all aspects of software development.
+  return `You are a senior code reviewer. Provide thoughtful, actionable feedback on security, performance, code quality, and best practices.
 
-COMPREHENSIVE ANALYSIS AREAS:
-- **Architecture**: Design patterns, SOLID principles, separation of concerns, modularity
-- **Code Quality**: Readability, maintainability, code smells, refactoring opportunities  
-- **Performance**: Algorithm efficiency, memory usage, caching, async patterns
-- **Security**: Vulnerabilities, input validation, data protection, authentication
-- **Testing**: Test coverage, testability, edge cases, test quality
-- **Documentation**: Code comments, API docs, README updates, examples
-- **Best Practices**: Language idioms, framework conventions, industry standards
-- **Scalability**: Future-proofing, extensibility, configuration management
+- Focus: correctness, security, performance, readability, maintainability
+- Only comment on real issues; avoid nitpicks
+- Propose concrete fixes with code examples when helpful
+- Keep explanations clear and specific
 
 PR: ${title} by ${author} (${head} \u2192 ${base})
 ${body ? `Description: ${body}` : ""}
 ${rules}
 
-FILES: ${fileList}
+Files: ${fileList}
 
-DIFF:
+Code diff:
 ${diff}
 
 ${inlineInstructions}
 
-RESPOND WITH ONLY VALID JSON (no markdown):
-- Focus on code enhancement opportunities across all areas
-- Provide specific improvement suggestions with code examples
-- Use priority indicators: \u{1F534} CRITICAL, \u{1F7E1} HIGH, \u{1F7E2} MEDIUM, \u{1F535} ENHANCEMENT
-- Reference industry standards and best practices
+IMPORTANT: You must respond with ONLY a valid JSON object. No markdown blocks, no extra text.
 
-Respond with this exact JSON structure:
+Response format:
 {
-  "summary": "Comprehensive code quality assessment covering architecture, performance, maintainability, security, and best practices",
-  "improvements": [
-    "\u{1F534} CRITICAL: [Security/Logic issue] - [Impact] - [Immediate fix needed]",
-    "\u{1F7E1} HIGH: [Performance/Architecture] - [Optimization opportunity] - [Refactoring suggestion]",
-    "\u{1F7E2} MEDIUM: [Code quality/Style] - [Maintainability improvement] - [Best practice alignment]",
-    "\u{1F535} ENHANCEMENT: [Feature improvement] - [User experience] - [Future-proofing]"
-  ],
-  "actions": [
-    "1. FIX: [Critical issue resolution with code example]",
-    "2. OPTIMIZE: [Performance enhancement with benchmarks]", 
-    "3. REFACTOR: [Architecture improvement with design patterns]",
-    "4. ENHANCE: [Code quality upgrade with modern practices]",
-    "5. TEST: [Testing strategy with specific scenarios]",
-    "6. DOCUMENT: [Documentation improvements with examples]"
-  ],
+  "summary": "Brief assessment of the changes with key findings",
+  "risks": ["List of security or correctness issues found"],
+  "actions": ["Prioritized list of specific actions to take"],
   "checks": {
-    "architecture": "PASS/FAIL - [Design patterns, SOLID principles, separation of concerns, modularity assessment]",
-    "correctness": "PASS/FAIL - [Logic validation, edge cases, error handling, business requirements]",
-    "performance": "PASS/FAIL - [Algorithm efficiency, memory usage, async patterns, scalability]",
-    "security": "PASS/FAIL - [Vulnerability scan, input validation, authentication, data protection]",
-    "maintainability": "PASS/FAIL - [Code readability, refactoring needs, technical debt, future extensibility]",
-    "testing": "PASS/FAIL - [Test coverage, testability, edge cases, integration scenarios]",
-    "documentation": "PASS/FAIL - [Code comments, API docs, examples, README completeness]",
-    "best_practices": "PASS/FAIL - [Language idioms, framework conventions, industry standards compliance]"
+    "correctness": "PASS/FAIL - Brief explanation",
+    "security": "PASS/FAIL - Brief explanation", 
+    "performance": "PASS/FAIL - Brief explanation",
+    "tests": "PASS/FAIL - Brief explanation",
+    "style": "PASS/FAIL - Brief explanation",
+    "docs": "PASS/FAIL - Brief explanation"
   },
   "inline": [
     { 
-      "path": "exact filename from diff",
-      "line": "line number in the NEW version of the file", 
+      "path": "filename",
+      "line": "line number", 
       "side": "RIGHT",
-      "body": "\uFFFD [CATEGORY]: [Enhancement opportunity] - [Current issue] - [Suggested improvement with code] - [Benefits] - [Implementation notes]"
+      "body": "Issue description with specific fix suggestion"
     }
   ]
 }`;
@@ -30394,7 +30371,7 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
         messages: [
           {
             role: "system",
-            content: "You are a senior software architect, security expert, and code reviewer with 15+ years of experience. You specialize in vulnerability detection, performance optimization, and maintainable code architecture. Provide detailed, actionable feedback with specific code examples and industry best practices."
+            content: "You are a senior code reviewer focused on security, performance, and code quality. Always respond with valid JSON only."
           },
           { role: "user", content: prompt }
         ],
@@ -30411,65 +30388,29 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
 }
 function renderMarkdown(review) {
   const checks = review.checks || {};
-  const list = (arr) => arr && arr.length ? arr.map((x) => `${x}`).join("\n\n") : "- No improvements suggested";
+  const list = (arr) => arr && arr.length ? arr.map((x) => `- ${x}`).join("\n") : "- (none)";
   const inlineCount = review.inline?.length || 0;
-  const improvements = review.improvements || review.risks || [];
-  const criticalCount = improvements.filter((r) => r.includes("\u{1F534} CRITICAL")).length || 0;
-  const highCount = improvements.filter((r) => r.includes("\u{1F7E1} HIGH")).length || 0;
-  const mediumCount = improvements.filter((r) => r.includes("\u{1F7E2} MEDIUM")).length || 0;
-  const enhancementCount = improvements.filter((r) => r.includes("\u{1F535} ENHANCEMENT")).length || 0;
-  return `## \u{1F680} AI Code Enhancement Analysis
+  return `### \u{1F916} AI Review Summary
 
-### \u{1F4CA} Improvement Opportunities
-${criticalCount > 0 ? `\u{1F534} **${criticalCount} Critical**` : ""}${highCount > 0 ? ` \u{1F7E1} **${highCount} High Priority**` : ""}${mediumCount > 0 ? ` \u{1F7E2} **${mediumCount} Medium**` : ""}${enhancementCount > 0 ? ` \u{1F535} **${enhancementCount} Enhancements**` : ""}
-
-### \u{1F4CB} Code Quality Summary
 ${review.summary || "No summary provided."}
 
 ---
+**Key Risks**
+${list(review.risks)}
 
-### \uFFFD Identified Improvements
-${list(improvements)}
-
----
-
-### \u{1F3AF} Recommended Action Plan
+**Recommended Actions**
 ${list(review.actions)}
 
----
+**Checks**
+- Correctness: ${checks.correctness || "n/a"}
+- Security: ${checks.security || "n/a"}
+- Performance: ${checks.performance || "n/a"}
+- Tests: ${checks.tests || "n/a"}
+- Style: ${checks.style || "n/a"}
+- Docs: ${checks.docs || "n/a"}
 
-### \u{1F50D} Comprehensive Quality Assessment
-
-#### \u{1F3D7}\uFE0F Architecture
-${checks.architecture || "Not analyzed"}
-
-#### \u2705 Correctness
-${checks.correctness || "Not analyzed"}
-
-#### \u26A1 Performance
-${checks.performance || "Not analyzed"}
-
-#### \u{1F6E1}\uFE0F Security
-${checks.security || "Not analyzed"}
-
-#### \u{1F527} Maintainability
-${checks.maintainability || "Not analyzed"}
-
-#### \u{1F9EA} Testing
-${checks.testing || "Not analyzed"}
-
-#### \u{1F4DA} Documentation
-${checks.documentation || "Not analyzed"}
-
-#### \u2B50 Best Practices
-${checks.best_practices || "Not analyzed"}
-
----
-
-### \u{1F4AC} Line-by-Line Analysis
-${inlineCount > 0 ? `\u{1F4CD} **${inlineCount} specific issues** identified with detailed remediation suggestions` : "\u2705 No critical line-specific issues found"}
-
-> **Powered by ${review.model || "AI"}** | Review completed with enhanced security and performance analysis
+**Inline Comments**
+${inlineCount > 0 ? `\u{1F4CD} ${inlineCount} specific issues identified and commented on individual lines` : "- No line-specific issues found"}
 `;
 }
 async function run() {
