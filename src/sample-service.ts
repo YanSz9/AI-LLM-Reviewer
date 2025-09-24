@@ -57,17 +57,31 @@ class UserService {
         }));
     }
 
-    // New function with multiple issues for Groq to analyze
+    // New function with multiple issues for enhanced Groq analysis
     authenticateUser(username, password) {
-        // Timing attack vulnerability
+        // Timing attack vulnerability - allows user enumeration
         for (let user of this.users) {
             if (user.name === username && user.password === password) {
-                // Logging sensitive data
+                // Critical: Logging sensitive data in production
                 console.log(`User ${username} authenticated with password: ${password}`);
-                return { token: "jwt-" + Math.random(), admin: user.name === "admin" };
+                // Weak token generation - predictable random
+                return { 
+                    token: "jwt-" + Math.random(), 
+                    admin: user.name === "admin",
+                    sessionId: Date.now() // Predictable session IDs
+                };
             }
         }
-        return null;
+        // Information disclosure - different responses for invalid user vs invalid password
+        throw new Error("Authentication failed - user not found");
+    }
+
+    // Additional critical vulnerability for testing
+    executeQuery(userInput) {
+        // Direct command injection vulnerability
+        const command = `ls -la ${userInput}`;
+        // This would execute system commands - critical security flaw
+        return eval(command);
     }
 }
 

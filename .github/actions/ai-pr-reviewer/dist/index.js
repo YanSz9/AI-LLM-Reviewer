@@ -30218,8 +30218,16 @@ ${patch}`);
       deletions: f.deletions ?? 0
     });
   }
+  let diffText = parts.join("\n\n---\n\n");
+  const estimatedTokens = diffText.length / 4;
+  const MAX_DIFF_TOKENS = 3e3;
+  if (estimatedTokens > MAX_DIFF_TOKENS) {
+    const maxChars = MAX_DIFF_TOKENS * 4;
+    diffText = diffText.slice(0, maxChars) + "\n\n[DIFF TRUNCATED DUE TO SIZE - Showing first " + MAX_DIFF_TOKENS + " tokens]";
+    core2.warning(`Diff truncated due to size: ${estimatedTokens} tokens > ${MAX_DIFF_TOKENS} limit`);
+  }
   return {
-    diffText: parts.join("\n\n---\n\n"),
+    diffText,
     files: fileInfo
   };
 }
@@ -30227,80 +30235,68 @@ function buildPrompt(opts) {
   const { title, body, author, base, head, rules, diff, includeTests, includeStyle, files, enableInlineComments, maxInlineComments } = opts;
   const fileList = files.map((f) => `- ${f.filename} (+${f.additions}/-${f.deletions})`).join("\n");
   const inlineInstructions = enableInlineComments ? `For inline comments, analyze the diff and provide line-specific feedback. Focus on the most critical issues first. Limit to ${maxInlineComments} inline comments maximum.` : "Do not provide inline comments, focus on the overall summary and checks.";
-  return `You are a senior software architect and security expert conducting a comprehensive code review. Your expertise includes:
-- Security vulnerability detection (OWASP Top 10, injection attacks, cryptographic issues)
-- Performance analysis (memory leaks, algorithmic complexity, async patterns)
-- Code quality assessment (maintainability, readability, SOLID principles)
-- Type safety and error handling best practices
+  return `You are a senior software engineer and code quality expert. Provide comprehensive code enhancement recommendations covering all aspects of software development.
 
-## REVIEW GUIDELINES:
-1. **Security**: Identify vulnerabilities with CVE references when possible. Explain attack vectors and provide specific remediation code.
-2. **Performance**: Analyze algorithmic complexity, memory usage, and suggest optimizations with benchmarks.
-3. **Code Quality**: Check for design patterns, code smells, and architectural concerns.
-4. **Type Safety**: Ensure proper TypeScript usage, null safety, and error boundaries.
-5. **Best Practices**: Verify industry standards, testing patterns, and documentation quality.
+COMPREHENSIVE ANALYSIS AREAS:
+- **Architecture**: Design patterns, SOLID principles, separation of concerns, modularity
+- **Code Quality**: Readability, maintainability, code smells, refactoring opportunities  
+- **Performance**: Algorithm efficiency, memory usage, caching, async patterns
+- **Security**: Vulnerabilities, input validation, data protection, authentication
+- **Testing**: Test coverage, testability, edge cases, test quality
+- **Documentation**: Code comments, API docs, README updates, examples
+- **Best Practices**: Language idioms, framework conventions, industry standards
+- **Scalability**: Future-proofing, extensibility, configuration management
 
-## RESPONSE REQUIREMENTS:
-- Provide DETAILED explanations of WHY each issue is problematic
-- Include CONCRETE code examples for fixes
-- Prioritize issues by severity (Critical > High > Medium > Low)
-- Reference industry standards, security frameworks, or documentation
-- Suggest alternative approaches when applicable
-
-PR Context:
-- Title: ${title}
-- Author: ${author}
-- Branch: ${head} \u2192 ${base}
-- Description: ${body || "(none)"}
+PR: ${title} by ${author} (${head} \u2192 ${base})
+${body ? `Description: ${body}` : ""}
 ${rules}
 
-Files Modified:
-${fileList}
+FILES: ${fileList}
 
-Code Changes (Unified Diff):
+DIFF:
 ${diff}
 
-CRITICAL: Respond with ONLY valid JSON. No markdown blocks, no additional text.
-
-Analysis Instructions:
 ${inlineInstructions}
 
-For each issue found:
-- Explain the security/performance impact
-- Provide specific code fixes with examples
-- Reference relevant standards (OWASP, NIST, etc.)
-- Suggest testing approaches
-- Consider maintainability implications
+RESPOND WITH ONLY VALID JSON (no markdown):
+- Focus on code enhancement opportunities across all areas
+- Provide specific improvement suggestions with code examples
+- Use priority indicators: \u{1F534} CRITICAL, \u{1F7E1} HIGH, \u{1F7E2} MEDIUM, \u{1F535} ENHANCEMENT
+- Reference industry standards and best practices
 
 Respond with this exact JSON structure:
 {
-  "summary": "Comprehensive assessment including architectural impact, security implications, and overall code quality",
-  "risks": [
-    "\u{1F534} CRITICAL: [Vulnerability type] - [Detailed impact] - [Attack vector] - [Remediation priority]",
-    "\u{1F7E1} HIGH: [Issue type] - [Business impact] - [Technical debt concern] - [Suggested timeline]",
-    "\u{1F7E2} MEDIUM: [Code quality issue] - [Maintainability impact] - [Best practice violation]"
+  "summary": "Comprehensive code quality assessment covering architecture, performance, maintainability, security, and best practices",
+  "improvements": [
+    "\u{1F534} CRITICAL: [Security/Logic issue] - [Impact] - [Immediate fix needed]",
+    "\u{1F7E1} HIGH: [Performance/Architecture] - [Optimization opportunity] - [Refactoring suggestion]",
+    "\u{1F7E2} MEDIUM: [Code quality/Style] - [Maintainability improvement] - [Best practice alignment]",
+    "\u{1F535} ENHANCEMENT: [Feature improvement] - [User experience] - [Future-proofing]"
   ],
   "actions": [
-    "1. IMMEDIATE: [Critical security fix with code example]",
-    "2. SHORT-TERM: [Performance optimization with specific approach]", 
-    "3. REFACTOR: [Code quality improvement with design pattern suggestion]",
-    "4. TESTING: [Specific test cases needed with examples]",
-    "5. DOCUMENTATION: [Required documentation updates]"
+    "1. FIX: [Critical issue resolution with code example]",
+    "2. OPTIMIZE: [Performance enhancement with benchmarks]", 
+    "3. REFACTOR: [Architecture improvement with design patterns]",
+    "4. ENHANCE: [Code quality upgrade with modern practices]",
+    "5. TEST: [Testing strategy with specific scenarios]",
+    "6. DOCUMENT: [Documentation improvements with examples]"
   ],
   "checks": {
-    "correctness": "PASS/FAIL - [Detailed analysis of logic, edge cases, error handling]",
-    "security": "PASS/FAIL - [OWASP compliance, vulnerability assessment, attack surface analysis]", 
-    "performance": "PASS/FAIL - [Algorithmic complexity, memory usage, bottleneck analysis]",
-    "tests": "PASS/FAIL - [Test coverage analysis, missing test cases, quality assessment]",
-    "style": "PASS/FAIL - [Code consistency, naming conventions, architectural patterns]",
-    "docs": "PASS/FAIL - [Documentation completeness, API docs, inline comments quality]"
+    "architecture": "PASS/FAIL - [Design patterns, SOLID principles, separation of concerns, modularity assessment]",
+    "correctness": "PASS/FAIL - [Logic validation, edge cases, error handling, business requirements]",
+    "performance": "PASS/FAIL - [Algorithm efficiency, memory usage, async patterns, scalability]",
+    "security": "PASS/FAIL - [Vulnerability scan, input validation, authentication, data protection]",
+    "maintainability": "PASS/FAIL - [Code readability, refactoring needs, technical debt, future extensibility]",
+    "testing": "PASS/FAIL - [Test coverage, testability, edge cases, integration scenarios]",
+    "documentation": "PASS/FAIL - [Code comments, API docs, examples, README completeness]",
+    "best_practices": "PASS/FAIL - [Language idioms, framework conventions, industry standards compliance]"
   },
   "inline": [
     { 
       "path": "exact filename from diff",
       "line": "line number in the NEW version of the file", 
       "side": "RIGHT",
-      "body": "\u{1F6A8} [SEVERITY]: [Issue description] - [Why it's problematic] - [Specific fix with code example] - [Alternative approaches] - [Testing recommendations]"
+      "body": "\uFFFD [CATEGORY]: [Enhancement opportunity] - [Current issue] - [Suggested improvement with code] - [Benefits] - [Implementation notes]"
     }
   ]
 }`;
@@ -30415,50 +30411,58 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
 }
 function renderMarkdown(review) {
   const checks = review.checks || {};
-  const list = (arr) => arr && arr.length ? arr.map((x) => `${x}`).join("\n\n") : "- No issues found";
+  const list = (arr) => arr && arr.length ? arr.map((x) => `${x}`).join("\n\n") : "- No improvements suggested";
   const inlineCount = review.inline?.length || 0;
-  const criticalCount = review.risks?.filter((r) => r.includes("\u{1F534} CRITICAL")).length || 0;
-  const highCount = review.risks?.filter((r) => r.includes("\u{1F7E1} HIGH")).length || 0;
-  const mediumCount = review.risks?.filter((r) => r.includes("\u{1F7E2} MEDIUM")).length || 0;
-  return `## \u{1F916} AI Code Review Analysis
+  const improvements = review.improvements || review.risks || [];
+  const criticalCount = improvements.filter((r) => r.includes("\u{1F534} CRITICAL")).length || 0;
+  const highCount = improvements.filter((r) => r.includes("\u{1F7E1} HIGH")).length || 0;
+  const mediumCount = improvements.filter((r) => r.includes("\u{1F7E2} MEDIUM")).length || 0;
+  const enhancementCount = improvements.filter((r) => r.includes("\u{1F535} ENHANCEMENT")).length || 0;
+  return `## \u{1F680} AI Code Enhancement Analysis
 
-### \u{1F4CA} Risk Assessment
-${criticalCount > 0 ? `\u{1F534} **${criticalCount} Critical Issues**` : ""}${highCount > 0 ? ` \u{1F7E1} **${highCount} High Priority**` : ""}${mediumCount > 0 ? ` \u{1F7E2} **${mediumCount} Medium Priority**` : ""}
+### \u{1F4CA} Improvement Opportunities
+${criticalCount > 0 ? `\u{1F534} **${criticalCount} Critical**` : ""}${highCount > 0 ? ` \u{1F7E1} **${highCount} High Priority**` : ""}${mediumCount > 0 ? ` \u{1F7E2} **${mediumCount} Medium**` : ""}${enhancementCount > 0 ? ` \u{1F535} **${enhancementCount} Enhancements**` : ""}
 
-### \u{1F4CB} Executive Summary
+### \u{1F4CB} Code Quality Summary
 ${review.summary || "No summary provided."}
 
 ---
 
-### \u{1F6A8} Security & Risk Analysis
-${list(review.risks)}
+### \uFFFD Identified Improvements
+${list(improvements)}
 
 ---
 
-### \u26A1 Action Plan
+### \u{1F3AF} Recommended Action Plan
 ${list(review.actions)}
 
 ---
 
-### \u{1F50D} Detailed Assessment
+### \u{1F50D} Comprehensive Quality Assessment
+
+#### \u{1F3D7}\uFE0F Architecture
+${checks.architecture || "Not analyzed"}
 
 #### \u2705 Correctness
 ${checks.correctness || "Not analyzed"}
 
+#### \u26A1 Performance
+${checks.performance || "Not analyzed"}
+
 #### \u{1F6E1}\uFE0F Security
 ${checks.security || "Not analyzed"}
 
-#### \u26A1 Performance  
-${checks.performance || "Not analyzed"}
+#### \u{1F527} Maintainability
+${checks.maintainability || "Not analyzed"}
 
 #### \u{1F9EA} Testing
-${checks.tests || "Not analyzed"}
-
-#### \u{1F3A8} Code Style
-${checks.style || "Not analyzed"}
+${checks.testing || "Not analyzed"}
 
 #### \u{1F4DA} Documentation
-${checks.docs || "Not analyzed"}
+${checks.documentation || "Not analyzed"}
+
+#### \u2B50 Best Practices
+${checks.best_practices || "Not analyzed"}
 
 ---
 
