@@ -261,8 +261,33 @@ async function callLLM(provider: string, model: string, prompt: string, maxToken
     const content = data.response || '{}';
     return extractJsonFromResponse(content);
   }
+
+  if (provider === 'groq') {
+    const key = process.env.GROQ_API_KEY;
+    if (!key) throw new Error('GROQ_API_KEY missing');
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${key}`, 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({
+        model,
+        messages: [ 
+          { role: 'system', content: 'You are an expert software reviewer.' }, 
+          { role: 'user', content: prompt } 
+        ],
+        temperature,
+        max_tokens: maxTokens
+      })
+    });
+    if (!res.ok) throw new Error(`Groq error ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content || '{}';
+    return extractJsonFromResponse(content);
+  }
   
-  throw new Error(`Provider ${provider} not supported. Available: openai, anthropic, azure-openai, ollama`);
+  throw new Error(`Provider ${provider} not supported. Available: openai, anthropic, azure-openai, ollama, groq`);
 }
 
 function renderMarkdown(review: any): string {
