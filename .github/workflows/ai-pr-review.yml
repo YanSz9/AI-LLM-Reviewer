@@ -35,8 +35,8 @@ jobs:
         uses: ./.github/actions/ai-pr-reviewer
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          provider: "openai" # or "anthropic", "azure-openai", "ollama", "groq"
-          model: "gpt-4o-mini" # customize - for Groq use models like "llama3-8b-8192", "mixtral-8x7b-32768"
+          provider: "groq" # or "anthropic", "azure-openai", "ollama", "groq"
+          model: "llama-3.1-8b-instant" # customize - for Groq use models like "llama3-8b-8192", "mixtral-8x7b-32768"
           max-tokens: "2500"
           temperature: "0.2"
           rules-path: ".github/ai-reviewer/rules.yml"
