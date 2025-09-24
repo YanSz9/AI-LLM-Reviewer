@@ -36,7 +36,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           provider: "openai" # or "anthropic", "azure-openai", "ollama", "groq"
-          model: "gpt-4o-mini" 
+          model: "gpt-5-mini" 
           max-tokens: "2500" # Reduced to stay within limits
           temperature: "0.3" # Slightly higher for more creative problem-solving
           rules-path: ".github/ai-reviewer/rules.yml"
