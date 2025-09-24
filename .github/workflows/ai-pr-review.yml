@@ -36,7 +36,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           provider: "groq" # or "anthropic", "azure-openai", "ollama", "groq"
-          model: "llama3-8b-8192" # Higher token limit model: 8192 tokens vs 6000
+          model: "llama-3.1-8b-instant" 
           max-tokens: "2000" # Reduced to stay within limits
           temperature: "0.3" # Slightly higher for more creative problem-solving
           rules-path: ".github/ai-reviewer/rules.yml"
