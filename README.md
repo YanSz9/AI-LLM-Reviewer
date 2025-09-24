@@ -5,7 +5,7 @@ This project implements an AI-powered pull request reviewer that automatically a
 ## Features
 
 - 🤖 **Automated AI Reviews**: Get instant, intelligent feedback on every pull request
-- 🔍 **Multi-Provider Support**: Works with OpenAI, Anthropic, Azure OpenAI, and Ollama
+- 🔍 **Multi-Provider Support**: Works with OpenAI, Anthropic, Azure OpenAI, Ollama, and Groq
 - 📋 **Structured Analysis**: Comprehensive checklist covering security, performance, tests, and style
 - 🛡️ **Security-First**: Automatically redacts secrets and sensitive information
 - ⚙️ **Configurable Rules**: Custom repository-specific guidelines and conventions
@@ -18,6 +18,7 @@ This project implements an AI-powered pull request reviewer that automatically a
    - `ANTHROPIC_API_KEY` for Anthropic
    - `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` for Azure
    - `OLLAMA_HOST` for Ollama
+   - `GROQ_API_KEY` for Groq
 
 2. **Build the Action**: Run the following commands:
    ```bash
@@ -38,8 +39,8 @@ Edit `.github/workflows/ai-pr-review.yml` to customize:
 - name: Run AI review
   uses: ./.github/actions/ai-pr-reviewer
   with:
-    provider: "openai"        # openai|anthropic|azure-openai|ollama
-    model: "gpt-4o-mini"      # model name
+    provider: "openai"        # openai|anthropic|azure-openai|ollama|groq
+    model: "gpt-4o-mini"      # model name (for groq: llama3-8b-8192, mixtral-8x7b-32768)
     max-tokens: "2500"        # response length
     temperature: "0.2"        # creativity (0.0-1.0)
 ```
@@ -103,6 +104,17 @@ AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
 # Set in GitHub Secrets
 OLLAMA_HOST=http://your-ollama-server:11434
 ```
+
+### Groq
+```bash
+# Set in GitHub Secrets
+GROQ_API_KEY=gsk_...
+```
+
+**Popular Groq Models:**
+- `llama3-8b-8192` - Fast Llama 3 8B model
+- `mixtral-8x7b-32768` - Mixtral 8x7B model 
+- `llama3-70b-8192` - Llama 3 70B model
 
 ## Development
 
