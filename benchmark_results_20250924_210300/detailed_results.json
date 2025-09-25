@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "pr_number": 6,
+    "generated_at": "2025-09-24T21:03:03.537118",
+    "total_known_issues": 27,
+    "analysis_version": "1.0.0"
+  },
+  "known_issues_breakdown": {
+    "security": 15,
+    "performance": 5,
+    "quality": 7
+  },
+  "model_results": {
+    "github-actions[bot]": {
+      "total_comments": 10,
+      "detected_issues": {
+        "security": 5,
+        "performance": 4,
+        "quality": 2
+      },
+      "total_detected": 11,
+      "detection_rate": 40.74074074074074,
+      "false_positives": 0,
+      "issue_details": [
+        {
+          "line": 13,
+          "type": "detected",
+          "content": "\ud83e\udd16 **AI Review**: Replace hardcoded API key with environment variable or secure storage."
+        },
+        {
+          "line": 34,
+          "type": "detected",
+          "content": "\ud83e\udd16 **AI Review**: Use prepared statements or parameterized queries to prevent SQL injection."
+        },
+        {
+          "line": 66,
+          "type": "detected",
+          "content": "\ud83e\udd16 **AI Review**: Implement proper error handling and logging for user authentication."
+        },
+        {
+          "line": 91,
+          "type": "detected",
+          "content": "\ud83e\udd16 **AI Review**: Use a secure password hashing algorithm, such as bcrypt or Argon2."
+        },
+        {
+          "line": 123,
+          "type": "detected",
+          "content": "\ud83e\udd16 **AI Review**: Implement asynchronous operations and locking mechanisms to prevent race conditions."
+        },
+        {
+          "line": 155,
+          "type": "detected",
+          "content": "\ud83e\udd16 **AI Review**: Regularly clean up and remove unused resources to prevent memory leaks."
+        },
+        {
+          "line": 25,
+          "type": "detected",
+          "content": "\ud83e\udd16 **AI Review**: Implement secure authentication and authorization for GitHub actions."
+        },
+        {
+          "line": 55,
+          "type": "detected",
+          "content": "\ud83e\udd16 **AI Review**: Use secure protocols for data transmission, such as HTTPS."
+        },
+        {
+          "line": 10,
+          "type": "detected",
+          "content": "\ud83e\udd16 **AI Review**: Optimize algorithms for better performance and reduce synchronous operations."
+        },
+        {
+          "line": null,
+          "type": "detected",
+          "content": "### \ud83e\udd16 AI Review Summary\n\nComprehensive benchmark test file with intentional security, performance, and quality issues for AI model comparison.\n\n---\n**Key Risks**\n- SQL injection vulnerability\n- XSS vu..."
+        }
+      ],
+      "security_score": 33.33333333333333,
+      "performance_score": 80.0,
+      "quality_score": 28.57142857142857
+    }
+  },
+  "summary": {
+    "best_overall": "github-actions[bot]",
+    "best_security": "github-actions[bot]",
+    "best_performance": "github-actions[bot]",
+    "best_quality": "github-actions[bot]"
+  }
+}

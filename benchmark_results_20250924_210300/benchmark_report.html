@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Benchmark Report - PR #6</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #f5f6fa; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .model-name { font-size: 1.5em; font-weight: bold; color: #2c3e50; margin-bottom: 15px; }
+        .score { font-size: 2em; font-weight: bold; margin: 10px 0; }
+        .score.excellent { color: #27ae60; }
+        .score.good { color: #f39c12; }
+        .score.poor { color: #e74c3c; }
+        .chart-container { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .summary-table { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .summary-table table { width: 100%; border-collapse: collapse; }
+        .summary-table th { background: #34495e; color: white; padding: 15px; text-align: left; }
+        .summary-table td { padding: 15px; border-bottom: 1px solid #ecf0f1; }
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; }
+        .badge.high { background: #e74c3c; color: white; }
+        .badge.medium { background: #f39c12; color: white; }
+        .badge.low { background: #27ae60; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 AI Model Benchmark Report</h1>
+            <p>Pull Request #6 | Generated on 2025-09-24 21:03:02</p>
+            <p>Comprehensive analysis of AI code review performance on intentional vulnerabilities</p>
+        </div>
+
+        <div class="metrics-grid">
+
+            <div class="metric-card">
+                <div class="model-name">github-actions[bot]</div>
+                <div class="score good">40.7%</div>
+                <p><strong>Detection Rate</strong></p>
+                <div style="margin-top: 15px;">
+                    <p>📊 <strong>Issues Found:</strong> 11/27</p>
+                    <p>🔒 <strong>Security:</strong> 33.3%</p>
+                    <p>⚡ <strong>Performance:</strong> 80.0%</p>
+                    <p>✨ <strong>Quality:</strong> 28.6%</p>
+                    <p>💬 <strong>Comments:</strong> 10</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="chart-container">
+            <h2>📊 Performance Comparison</h2>
+            <canvas id="comparisonChart" width="400" height="200"></canvas>
+        </div>
+
+        <div class="summary-table">
+            <h2 style="padding: 20px; margin: 0; background: #34495e; color: white;">📋 Detailed Results</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Overall Score</th>
+                        <th>Security</th>
+                        <th>Performance</th>
+                        <th>Quality</th>
+                        <th>Comments</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td><strong>github-actions[bot]</strong></td>
+                        <td><span class="badge medium">40.7%</span></td>
+                        <td>33.3%</td>
+                        <td>80.0%</td>
+                        <td>28.6%</td>
+                        <td>10</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('comparisonChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Overall Detection', 'Security Issues', 'Performance Issues', 'Quality Issues'],
+                datasets: [
+                    {
+                        label: 'github-actions[bot]',
+                        data: [40.7, 33.3, 80.0, 28.6],
+                        borderColor: '#e74c3c',
+                        backgroundColor: '#e74c3c33',
+                        borderWidth: 2
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                scale: {
+                    ticks: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
