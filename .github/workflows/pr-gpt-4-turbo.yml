@@ -4,8 +4,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [main]
-    paths:
-      - 'src/security-test-gpt-4-turbo.ts'
 
 permissions:
   contents: read
@@ -14,6 +12,7 @@ permissions:
 jobs:
   ai-review:
     runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'gpt-4-turbo')
     steps:
       - name: Checkout
         uses: actions/checkout@v4

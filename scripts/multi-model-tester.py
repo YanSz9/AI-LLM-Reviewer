@@ -377,33 +377,49 @@ def create_test_branches_and_prs():
         # Create and switch to new branch
         run_command(f"git checkout -b {branch_name}")
         
-        # Remove original benchmark file and create model-specific one
-        # This ensures the entire file appears as new in the PR diff
-        original_benchmark = '/home/yan/projects/AI-TCC/src/benchmark-test.ts'
-        model_benchmark = f'/home/yan/projects/AI-TCC/src/security-test-{model_name}.ts'
+        # Modify the original benchmark file directly 
+        # This creates a clean diff that works well with GitHub's inline comment API
+        benchmark_path = '/home/yan/projects/AI-TCC/src/benchmark-test.ts'
         
-        # Read the original benchmark content
-        with open(original_benchmark, 'r') as f:
+        # Read the original content
+        with open(benchmark_path, 'r') as f:
             original_content = f.read()
         
-        # Remove the original file from this branch
-        run_command(f"git rm {original_benchmark}")
-        
-        # Create model-specific benchmark file with full content
-        model_comment = f"""// AI Model Security Test: {model_name.upper()}
-// Test Branch: {branch_name}
+        # Add model-specific header and inject vulnerabilities throughout
+        model_header = f"""// AI Model Security Test: {model_name.upper()}
+// Test Branch: {branch_name}  
 // Generated: {datetime.now().isoformat()}
 // This file contains 27+ intentional security vulnerabilities for AI review testing
-// Each AI model will review this file to detect security issues
 
 """
-        full_content = model_comment + original_content
         
-        with open(model_benchmark, 'w') as f:
-            f.write(full_content)
+        # Add some obvious vulnerabilities at the end to ensure detection
+        additional_vulns = f"""
+
+// Additional {model_name.upper()} Test Vulnerabilities
+function testVulnerability_{model_name.replace('-', '_')}() {{
+    // Hardcoded password for {model_name}
+    const password = "admin123_{model_name}";
+    
+    // SQL injection risk for {model_name}
+    const query = `SELECT * FROM users WHERE id = ${{req.params.id}}`;
+    
+    // XSS vulnerability for {model_name}  
+    document.innerHTML = userInput;
+    
+    // Path traversal for {model_name}
+    fs.readFile(`./files/${{req.params.filename}}`, callback);
+}}
+"""
         
-        # Add the new model-specific file
-        run_command(f"git add {model_benchmark}")
+        # Combine content
+        modified_content = model_header + original_content + additional_vulns
+        
+        with open(benchmark_path, 'w') as f:
+            f.write(modified_content)
+        
+        # Add the modified benchmark file
+        run_command(f"git add {benchmark_path}")
         run_command(f"git commit -m 'test: Update benchmark file for {model_name} AI review'")
         run_command(f"git push origin {branch_name}")
         
