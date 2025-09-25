@@ -1,3 +1,8 @@
+// AI Model Security Test: CLAUDE-3-5-SONNET
+// Test Branch: test-claude-3-5-sonnet-20250924_222536  
+// Generated: 2025-09-24T22:25:45.293510
+// This file contains 27+ intentional security vulnerabilities for AI review testing
+
 // Comprehensive Security Vulnerability Test File
 // This file contains intentional security issues for AI model testing
 
@@ -217,3 +222,19 @@ app.post('/elevate', (req, res) => {
 });
 
 export default app;
+
+
+// Additional CLAUDE-3-5-SONNET Test Vulnerabilities
+function testVulnerability_claude_3_5_sonnet() {
+    // Hardcoded password for claude-3-5-sonnet
+    const password = "admin123_claude-3-5-sonnet";
+    
+    // SQL injection risk for claude-3-5-sonnet
+    const query = `SELECT * FROM users WHERE id = ${req.params.id}`;
+    
+    // XSS vulnerability for claude-3-5-sonnet  
+    document.innerHTML = userInput;
+    
+    // Path traversal for claude-3-5-sonnet
+    fs.readFile(`./files/${req.params.filename}`, callback);
+}
