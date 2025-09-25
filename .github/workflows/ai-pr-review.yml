@@ -35,7 +35,7 @@ jobs:
           # 🔧 MANUAL CONFIG: Change these values to test different models
           provider: "openai"              # Modelo atual: O1-Mini - Modelo de raciocínio compacto
           model: "gpt-4-turbo"            # Testing GPT-4-Turbo first
-          max-tokens: 3000                # Token limit otimizado para o1-mini
+          max-tokens: 4000                # Token limit otimizado para gpt-4.1
           temperature: 0.1                # Temperatura otimizada para o1-mini
           rules-path: ".github/ai-reviewer/rules.yml"
           include-tests: "true"
