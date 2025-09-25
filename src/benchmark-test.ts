@@ -1,3 +1,8 @@
+// AI Model Security Test: GPT-4-TURBO
+// Test Branch: test-gpt-4-turbo-20250924_222536  
+// Generated: 2025-09-24T22:25:37.067825
+// This file contains 27+ intentional security vulnerabilities for AI review testing
+
 // Comprehensive Security Vulnerability Test File
 // This file contains intentional security issues for AI model testing
 
@@ -217,3 +222,19 @@ app.post('/elevate', (req, res) => {
 });
 
 export default app;
+
+
+// Additional GPT-4-TURBO Test Vulnerabilities
+function testVulnerability_gpt_4_turbo() {
+    // Hardcoded password for gpt-4-turbo
+    const password = "admin123_gpt-4-turbo";
+    
+    // SQL injection risk for gpt-4-turbo
+    const query = `SELECT * FROM users WHERE id = ${req.params.id}`;
+    
+    // XSS vulnerability for gpt-4-turbo  
+    document.innerHTML = userInput;
+    
+    // Path traversal for gpt-4-turbo
+    fs.readFile(`./files/${req.params.filename}`, callback);
+}
