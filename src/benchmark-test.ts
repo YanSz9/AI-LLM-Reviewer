@@ -1,3 +1,8 @@
+// AI Model Security Test: O1-PREVIEW
+// Test Branch: test-o1-preview-20250924_222536  
+// Generated: 2025-09-24T22:25:42.410031
+// This file contains 27+ intentional security vulnerabilities for AI review testing
+
 // Comprehensive Security Vulnerability Test File
 // This file contains intentional security issues for AI model testing
 
@@ -217,3 +222,19 @@ app.post('/elevate', (req, res) => {
 });
 
 export default app;
+
+
+// Additional O1-PREVIEW Test Vulnerabilities
+function testVulnerability_o1_preview() {
+    // Hardcoded password for o1-preview
+    const password = "admin123_o1-preview";
+    
+    // SQL injection risk for o1-preview
+    const query = `SELECT * FROM users WHERE id = ${req.params.id}`;
+    
+    // XSS vulnerability for o1-preview  
+    document.innerHTML = userInput;
+    
+    // Path traversal for o1-preview
+    fs.readFile(`./files/${req.params.filename}`, callback);
+}
