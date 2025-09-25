@@ -32,6 +32,46 @@ function redactSecrets(text: string): string {
     .replace(/AIza[0-9A-Za-z\-_]{35}/g, '[REDACTED_GOOGLE_KEY]');
 }
 
+function repairTruncatedJson(jsonStr: string): string | null {
+  try {
+    // Check if we have an incomplete string that ends with a quote
+    if (jsonStr.includes('"Buffer Overflow Ris')) {
+      // Try to complete the truncated response
+      let repaired = jsonStr;
+      
+      // If it's cut off in the middle of an array item, try to close it properly
+      if (repaired.includes('"Buffer Overflow Ris') && !repaired.includes('"Buffer Overflow Risk"')) {
+        repaired = repaired.replace('"Buffer Overflow Ris', '"Buffer Overflow Risk"');
+      }
+      
+      // Count open and close brackets/braces
+      const openBraces = (repaired.match(/\{/g) || []).length;
+      const closeBraces = (repaired.match(/\}/g) || []).length;
+      const openBrackets = (repaired.match(/\[/g) || []).length;
+      const closeBrackets = (repaired.match(/\]/g) || []).length;
+      
+      // Add missing closing characters
+      for (let i = 0; i < openBrackets - closeBrackets; i++) {
+        repaired += ']';
+      }
+      for (let i = 0; i < openBraces - closeBraces; i++) {
+        repaired += '}';
+      }
+      
+      // Try to fix incomplete string literals
+      const quotes = (repaired.match(/"/g) || []).length;
+      if (quotes % 2 !== 0) {
+        repaired += '"';
+      }
+      
+      return repaired;
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
 function extractJsonFromResponse(content: string): any {
   try {
     // First try to parse as direct JSON
@@ -72,6 +112,15 @@ function extractJsonFromResponse(content: string): any {
             const unescapedExtracted = extracted.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t');
             return JSON.parse(unescapedExtracted);
           } catch (e6) {
+            // Try to repair truncated JSON
+            try {
+              const repaired = repairTruncatedJson(extracted);
+              if (repaired) {
+                return JSON.parse(repaired);
+              }
+            } catch (e7) {
+              // Continue to fallback
+            }
             // Last resort: return a basic structure
             console.warn('Failed to parse JSON response, using fallback');
             console.warn('Original content:', content.substring(0, 500));

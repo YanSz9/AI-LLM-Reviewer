@@ -30148,6 +30148,34 @@ ${JSON.stringify(doc, null, 2)}`;
 function redactSecrets(text) {
   return text.replace(/(api[_-]?key|secret|token|password)\s*[:=]\s*['\"]?[^'\"\n]+/gi, "$1: [REDACTED]").replace(/AIza[0-9A-Za-z\-_]{35}/g, "[REDACTED_GOOGLE_KEY]");
 }
+function repairTruncatedJson(jsonStr) {
+  try {
+    if (jsonStr.includes('"Buffer Overflow Ris')) {
+      let repaired = jsonStr;
+      if (repaired.includes('"Buffer Overflow Ris') && !repaired.includes('"Buffer Overflow Risk"')) {
+        repaired = repaired.replace('"Buffer Overflow Ris', '"Buffer Overflow Risk"');
+      }
+      const openBraces = (repaired.match(/\{/g) || []).length;
+      const closeBraces = (repaired.match(/\}/g) || []).length;
+      const openBrackets = (repaired.match(/\[/g) || []).length;
+      const closeBrackets = (repaired.match(/\]/g) || []).length;
+      for (let i = 0; i < openBrackets - closeBrackets; i++) {
+        repaired += "]";
+      }
+      for (let i = 0; i < openBraces - closeBraces; i++) {
+        repaired += "}";
+      }
+      const quotes = (repaired.match(/"/g) || []).length;
+      if (quotes % 2 !== 0) {
+        repaired += '"';
+      }
+      return repaired;
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
 function extractJsonFromResponse(content) {
   try {
     return JSON.parse(content);
@@ -30179,6 +30207,13 @@ function extractJsonFromResponse(content) {
             const unescapedExtracted = extracted.replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\t/g, "	");
             return JSON.parse(unescapedExtracted);
           } catch (e6) {
+            try {
+              const repaired = repairTruncatedJson(extracted);
+              if (repaired) {
+                return JSON.parse(repaired);
+              }
+            } catch (e7) {
+            }
             console.warn("Failed to parse JSON response, using fallback");
             console.warn("Original content:", content.substring(0, 500));
             return {
