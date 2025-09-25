@@ -12,6 +12,18 @@ import pandas as pd
 from datetime import datetime
 import os
 
+# Sincronização com modelos do switch-ai-model.py
+SUPPORTED_MODELS = {
+    'o1-mini': 'O1-Mini',
+    'gpt-4.1': 'GPT-4.1', 
+    'gpt-5': 'GPT-5',
+    'gpt-4o': 'GPT-4o',
+    'gpt-4-turbo': 'GPT-4-Turbo',
+    'o1-preview': 'O1-Preview',
+    'claude': 'Claude-3.5-Sonnet',
+    'llama': 'Llama-3.1-8B'
+}
+
 class AIModelAnalyzer:
     def __init__(self, repo_owner="YanSz9", repo_name="AI-LLM-Reviewer"):
         self.repo_owner = repo_owner
@@ -56,20 +68,35 @@ class AIModelAnalyzer:
         }
 
     def extract_model_from_title(self, title):
-        """Extract AI model name from PR title"""
+        """Extract AI model name from PR title - Sincronizado com switch-ai-model.py"""
         title_lower = title.lower()
-        if 'gpt-4-turbo' in title_lower:
-            return 'GPT-4-Turbo'
-        elif 'gpt-4o' in title_lower:
-            return 'GPT-4o'
-        elif 'o1-preview' in title_lower:
-            return 'O1-Preview'
-        elif 'claude' in title_lower:
-            return 'Claude-3.5-Sonnet'
-        elif 'llama' in title_lower or 'groq' in title_lower:
-            return 'Llama-3.1-8B'
-        else:
-            return 'Unknown'
+        
+        # Prioridade de detecção (mais específico primeiro)
+        model_patterns = [
+            ('o1-mini', 'O1-Mini'),
+            ('gpt-4.1', 'GPT-4.1'),
+            ('gpt-5', 'GPT-5'),
+            ('o1-preview', 'O1-Preview'),
+            ('gpt-4-turbo', 'GPT-4-Turbo'),
+            ('gpt-4o', 'GPT-4o'),
+            ('claude-3-5-sonnet', 'Claude-3.5-Sonnet'),
+            ('claude', 'Claude-3.5-Sonnet'),
+            ('llama-3.1', 'Llama-3.1-8B'),
+            ('llama', 'Llama-3.1-8B'),
+            ('groq', 'Llama-3.1-8B')
+        ]
+        
+        # Procura pelos padrões na ordem de prioridade
+        for pattern, model_name in model_patterns:
+            if pattern in title_lower:
+                return model_name
+        
+        # Fallback para detecção baseada no branch name também
+        for model_key, model_display in SUPPORTED_MODELS.items():
+            if model_key in title_lower:
+                return model_display
+        
+        return 'Unknown'
 
     def analyze_comment_quality(self, comment_text):
         """Analyze the quality and type of AI comments"""
@@ -211,6 +238,7 @@ class AIModelAnalyzer:
     def run_analysis(self, pr_numbers):
         """Run complete analysis on list of PR numbers"""
         print("🔍 Collecting AI model review data...")
+        print(f"📋 Modelos suportados: {', '.join(SUPPORTED_MODELS.values())}")
         
         for pr_num in pr_numbers:
             print(f"📝 Analyzing PR #{pr_num}...")
@@ -223,6 +251,11 @@ class AIModelAnalyzer:
         
         if self.results:
             print(f"\n📊 Generating comparison graphs for {len(self.results)} models...")
+            
+            # Mostrar modelos detectados
+            detected_models = [r['model'] for r in self.results]
+            print(f"🎯 Modelos detectados: {', '.join(set(detected_models))}")
+            
             self.generate_comparison_graphs()
         else:
             print("❌ No data collected for analysis")
@@ -231,6 +264,11 @@ def main():
     """Main function for interactive usage"""
     print("🎓 AI Model Academic Comparison Tool")
     print("=" * 50)
+    
+    print("📋 Modelos suportados para análise:")
+    for key, name in SUPPORTED_MODELS.items():
+        print(f"  • {name} (detecta: '{key}')")
+    print()
     
     analyzer = AIModelAnalyzer()
     
