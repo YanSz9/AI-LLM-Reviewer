@@ -1,0 +1,50 @@
+name: Test gpt-4o-mini
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [test-gpt-4o-mini-*]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test-gpt-4o-mini:
+    runs-on: ubuntu-latest
+    name: "Test gpt-4o-mini"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd .github/actions/ai-pr-reviewer
+          npm ci --ignore-scripts
+
+      - name: Run gpt-4o-mini Test
+        uses: ./.github/actions/ai-pr-reviewer
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          provider: "openai"
+          model: "gpt-4o-mini"
+          temperature: "0.2"
+          max-tokens: "3000"
+          include-tests: "true"
+          include-style: "true"
+          
+      - name: Save Results
+        run: |
+          echo "Model: gpt-4o-mini" > test-results-gpt-4o-mini.txt
+          echo "Timestamp: $(date)" >> test-results-gpt-4o-mini.txt
+          echo "Configuration:" >> test-results-gpt-4o-mini.txt
+          echo "  Provider: openai" >> test-results-gpt-4o-mini.txt
+          echo "  Model: gpt-4o-mini" >> test-results-gpt-4o-mini.txt
+          echo "  Temperature: 0.2" >> test-results-gpt-4o-mini.txt
