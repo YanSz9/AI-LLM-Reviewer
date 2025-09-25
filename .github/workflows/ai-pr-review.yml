@@ -3,20 +3,15 @@ name: AI PR Review
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: ["**"]
-    paths-ignore:
-      - 'src/security-test-*.ts'
+    branches: [main]
 
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
-  review:
+  ai-review:
     runs-on: ubuntu-latest
-    if: >-
-      !contains(github.event.pull_request.title, '[skip ai]') &&
-      !contains(join(github.event.pull_request.labels.*.name, ','), 'skip-ai')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,19 +32,17 @@ jobs:
         uses: ./.github/actions/ai-pr-reviewer
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          provider: "groq" # or "openai", "anthropic", "azure-openai", "ollama"
-          model: "llama-3.1-8b-instant" # Fixed API compatibility
-          max-tokens: "2000" # Conservative limit for Groq
-          temperature: "0.3" # Slightly higher for more creative problem-solving
+          # 🔧 MANUAL CONFIG: Change these values to test different models
+          provider: "openai"              # Options: "openai", "anthropic", "groq"
+          model: "gpt-4o"                 # OpenAI: "gpt-4o", "gpt-4-turbo", "o1-preview" | Anthropic: "claude-3-5-sonnet-20241022" | Groq: "llama-3.1-8b-instant"
+          max-tokens: 3000                # Token limit for responses
+          temperature: 0.2                # Creativity level (0.0-1.0)
           rules-path: ".github/ai-reviewer/rules.yml"
           include-tests: "true"
-          include-style: "true"
-          inline-comments: "true" # Enable GitHub Copilot-style inline comments
-          max-inline-comments: "15" # Limit number of inline comments
+          include-style: "true" 
+          inline-comments: "true"
+          max-inline-comments: 15
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-          OLLAMA_HOST: ${{ secrets.OLLAMA_HOST }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}

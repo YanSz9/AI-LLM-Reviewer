@@ -1,6 +1,6 @@
 {
   "test_session": {
-    "timestamp": "2025-09-24T22:25:48.539101",
+    "timestamp": "2025-09-24T22:34:38.715547",
     "models_tested": 4,
     "benchmark_file": "src/benchmark-test.ts",
     "total_vulnerabilities": 27
@@ -8,23 +8,23 @@
   "created_prs": [
     {
       "model": "gpt-4-turbo",
-      "branch": "test-gpt-4-turbo-20250924_222536",
-      "pr_url": "https://github.com/YanSz9/AI-LLM-Reviewer/pull/23"
+      "branch": "test-gpt-4-turbo-20250924_223426",
+      "pr_url": "https://github.com/YanSz9/AI-LLM-Reviewer/pull/27"
     },
     {
       "model": "gpt-4o",
-      "branch": "test-gpt-4o-20250924_222536",
-      "pr_url": "https://github.com/YanSz9/AI-LLM-Reviewer/pull/24"
+      "branch": "test-gpt-4o-20250924_223426",
+      "pr_url": "https://github.com/YanSz9/AI-LLM-Reviewer/pull/28"
     },
     {
       "model": "o1-preview",
-      "branch": "test-o1-preview-20250924_222536",
-      "pr_url": "https://github.com/YanSz9/AI-LLM-Reviewer/pull/25"
+      "branch": "test-o1-preview-20250924_223426",
+      "pr_url": "https://github.com/YanSz9/AI-LLM-Reviewer/pull/29"
     },
     {
       "model": "claude-3-5-sonnet",
-      "branch": "test-claude-3-5-sonnet-20250924_222536",
-      "pr_url": "https://github.com/YanSz9/AI-LLM-Reviewer/pull/26"
+      "branch": "test-claude-3-5-sonnet-20250924_223426",
+      "pr_url": "https://github.com/YanSz9/AI-LLM-Reviewer/pull/30"
     }
   ]
 }
