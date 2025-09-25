@@ -36,7 +36,7 @@ jobs:
           provider: "openai"              
           model: "gpt-5"            
           max-tokens: 4000                
-          temperature: 0.2              
+          temperature: 1            
           rules-path: ".github/ai-reviewer/rules.yml"
           include-tests: "true"
           include-style: "true" 
