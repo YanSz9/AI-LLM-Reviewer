@@ -1,0 +1,50 @@
+name: Test o1-mini
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [test-o1-mini-*]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test-o1-mini:
+    runs-on: ubuntu-latest
+    name: "Test o1-mini"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd .github/actions/ai-pr-reviewer
+          npm ci --ignore-scripts
+
+      - name: Run o1-mini Test
+        uses: ./.github/actions/ai-pr-reviewer
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          provider: "openai"
+          model: "o1-mini"
+          temperature: "1.0"
+          max-completion-tokens: "3000"
+          include-tests: "true"
+          include-style: "true"
+          
+      - name: Save Results
+        run: |
+          echo "Model: o1-mini" > test-results-o1-mini.txt
+          echo "Timestamp: $(date)" >> test-results-o1-mini.txt
+          echo "Configuration:" >> test-results-o1-mini.txt
+          echo "  Provider: openai" >> test-results-o1-mini.txt
+          echo "  Model: o1-mini" >> test-results-o1-mini.txt
+          echo "  Temperature: 1.0" >> test-results-o1-mini.txt
