@@ -33,10 +33,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # 🔧 MANUAL CONFIG: Change these values to test different models
-          provider: "groq"              
-          model: "openai/gpt-oss-20b"            
-          max-tokens: 4000                
-          temperature: 1            
+          provider: "groq"
+          model: "llama-3.1-8b-instant" 
+          max-tokens: "2000"
+          temperature: "0.3"      
           rules-path: ".github/ai-reviewer/rules.yml"
           include-tests: "true"
           include-style: "true" 
