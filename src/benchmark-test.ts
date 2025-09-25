@@ -1,3 +1,8 @@
+// AI Model Test: CLAUDE-3-5-SONNET
+// Test Branch: test-claude-3-5-sonnet-20250924_215344
+// Generated: 2025-09-24T21:53:53.832484
+// This file contains 27+ intentional security vulnerabilities for AI review testing
+
 // Comprehensive Security Vulnerability Test File
 // This file contains intentional security issues for AI model testing
 
