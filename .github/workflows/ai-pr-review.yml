@@ -33,10 +33,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # 🔧 MANUAL CONFIG: Change these values to test different models
-          provider: "openai"              # Modelo atual: O1-Mini - Modelo de raciocínio compacto
-          model: "gpt-4-turbo"            # Testing GPT-4-Turbo first
-          max-tokens: 4000                # Token limit otimizado para gpt-4.1
-          temperature: 0.1                # Temperatura otimizada para o1-mini
+          provider: "openai"              
+          model: "gpt-4.1"            
+          max-tokens: 4000                
+          temperature: 0.2              
           rules-path: ".github/ai-reviewer/rules.yml"
           include-tests: "true"
           include-style: "true" 
