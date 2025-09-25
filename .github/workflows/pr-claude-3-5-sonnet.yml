@@ -3,6 +3,9 @@ name: AI PR Review - CLAUDE-3-5-SONNET
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'src/security-test-claude-3-5-sonnet.ts'
 
 permissions:
   contents: read

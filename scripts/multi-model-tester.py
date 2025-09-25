@@ -377,27 +377,33 @@ def create_test_branches_and_prs():
         # Create and switch to new branch
         run_command(f"git checkout -b {branch_name}")
         
-        # Modify the benchmark test file to trigger AI review
-        # Add a comment at the top to indicate which model is being tested
-        benchmark_path = '/home/yan/projects/AI-TCC/src/benchmark-test.ts'
+        # Remove original benchmark file and create model-specific one
+        # This ensures the entire file appears as new in the PR diff
+        original_benchmark = '/home/yan/projects/AI-TCC/src/benchmark-test.ts'
+        model_benchmark = f'/home/yan/projects/AI-TCC/src/security-test-{model_name}.ts'
         
-        with open(benchmark_path, 'r') as f:
+        # Read the original benchmark content
+        with open(original_benchmark, 'r') as f:
             original_content = f.read()
         
-        # Add model-specific comment at the top
-        model_comment = f"""// AI Model Test: {model_name.upper()}
+        # Remove the original file from this branch
+        run_command(f"git rm {original_benchmark}")
+        
+        # Create model-specific benchmark file with full content
+        model_comment = f"""// AI Model Security Test: {model_name.upper()}
 // Test Branch: {branch_name}
 // Generated: {datetime.now().isoformat()}
 // This file contains 27+ intentional security vulnerabilities for AI review testing
+// Each AI model will review this file to detect security issues
 
 """
-        modified_content = model_comment + original_content
+        full_content = model_comment + original_content
         
-        with open(benchmark_path, 'w') as f:
-            f.write(modified_content)
+        with open(model_benchmark, 'w') as f:
+            f.write(full_content)
         
-        # Commit the modified benchmark file
-        run_command(f"git add {benchmark_path}")
+        # Add the new model-specific file
+        run_command(f"git add {model_benchmark}")
         run_command(f"git commit -m 'test: Update benchmark file for {model_name} AI review'")
         run_command(f"git push origin {branch_name}")
         

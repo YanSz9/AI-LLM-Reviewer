@@ -3,6 +3,9 @@ name: AI PR Review - GPT-4O
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'src/security-test-gpt-4o.ts'
 
 permissions:
   contents: read

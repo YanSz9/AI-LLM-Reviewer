@@ -3,6 +3,9 @@ name: AI PR Review - O1-PREVIEW
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'src/security-test-o1-preview.ts'
 
 permissions:
   contents: read
