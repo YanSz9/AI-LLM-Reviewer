@@ -1,0 +1,51 @@
+name: O1-Preview PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ["**"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  o1-preview-review:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.title, 'O1-Preview') || contains(github.event.pull_request.head.ref, 'test-o1-preview')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: |
+          cd .github/actions/ai-pr-reviewer
+          npm ci --ignore-scripts
+
+      - name: Run O1-Preview AI Review
+        uses: ./.github/actions/ai-pr-reviewer
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          provider: "openai"
+          model: "o1-preview"
+          max-completion-tokens: "3000"
+          temperature: "1.0"
+          rules-path: ".github/ai-reviewer/rules.yml"
+          include-tests: "true"
+          include-style: "true"
+          inline-comments: "true"
+          max-inline-comments: "25"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          OLLAMA_HOST: ${{ secrets.OLLAMA_HOST }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
