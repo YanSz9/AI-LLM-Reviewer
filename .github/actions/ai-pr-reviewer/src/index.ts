@@ -37,21 +37,44 @@ function extractJsonFromResponse(content: string): any {
     // First try to parse as direct JSON
     return JSON.parse(content);
   } catch (e) {
-    // If that fails, try to extract JSON from markdown code blocks
-    const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[1]);
-      } catch (e2) {
-        // If markdown extraction fails, try to find any JSON-like structure
-        const jsonStart = content.indexOf('{');
-        const jsonEnd = content.lastIndexOf('}');
-        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+    // Try parsing with escaped content (for GPT-5 format)
+    try {
+      // Handle escaped JSON strings like GPT-5 returns
+      const unescaped = content.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t');
+      return JSON.parse(unescaped);
+    } catch (e2) {
+      // If that fails, try to extract JSON from markdown code blocks
+      const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (jsonMatch) {
+        try {
+          return JSON.parse(jsonMatch[1]);
+        } catch (e3) {
+          // Try escaped version of markdown content
           try {
-            return JSON.parse(content.substring(jsonStart, jsonEnd + 1));
-          } catch (e3) {
+            const unescapedMatch = jsonMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t');
+            return JSON.parse(unescapedMatch);
+          } catch (e4) {
+            // Continue to next method
+          }
+        }
+      }
+      
+      // If markdown extraction fails, try to find any JSON-like structure
+      const jsonStart = content.indexOf('{');
+      const jsonEnd = content.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        const extracted = content.substring(jsonStart, jsonEnd + 1);
+        try {
+          return JSON.parse(extracted);
+        } catch (e5) {
+          try {
+            // Try escaped version
+            const unescapedExtracted = extracted.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t');
+            return JSON.parse(unescapedExtracted);
+          } catch (e6) {
             // Last resort: return a basic structure
             console.warn('Failed to parse JSON response, using fallback');
+            console.warn('Original content:', content.substring(0, 500));
             return {
               summary: "Failed to parse AI response properly",
               risks: ["Could not extract structured review"],

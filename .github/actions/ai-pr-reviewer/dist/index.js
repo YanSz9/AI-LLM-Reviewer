@@ -30152,18 +30152,35 @@ function extractJsonFromResponse(content) {
   try {
     return JSON.parse(content);
   } catch (e) {
-    const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[1]);
-      } catch (e2) {
-        const jsonStart = content.indexOf("{");
-        const jsonEnd = content.lastIndexOf("}");
-        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+    try {
+      const unescaped = content.replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\t/g, "	");
+      return JSON.parse(unescaped);
+    } catch (e2) {
+      const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (jsonMatch) {
+        try {
+          return JSON.parse(jsonMatch[1]);
+        } catch (e3) {
           try {
-            return JSON.parse(content.substring(jsonStart, jsonEnd + 1));
-          } catch (e3) {
+            const unescapedMatch = jsonMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\t/g, "	");
+            return JSON.parse(unescapedMatch);
+          } catch (e4) {
+          }
+        }
+      }
+      const jsonStart = content.indexOf("{");
+      const jsonEnd = content.lastIndexOf("}");
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        const extracted = content.substring(jsonStart, jsonEnd + 1);
+        try {
+          return JSON.parse(extracted);
+        } catch (e5) {
+          try {
+            const unescapedExtracted = extracted.replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\t/g, "	");
+            return JSON.parse(unescapedExtracted);
+          } catch (e6) {
             console.warn("Failed to parse JSON response, using fallback");
+            console.warn("Original content:", content.substring(0, 500));
             return {
               summary: "Failed to parse AI response properly",
               risks: ["Could not extract structured review"],
@@ -30409,8 +30426,7 @@ async function callLLM(provider, model, prompt, maxTokens, temperature) {
           { role: "user", content: prompt }
         ],
         temperature,
-        max_completion_tokens: maxTokens
-        // Updated for Groq API compatibility
+        max_tokens: maxTokens
       })
     });
     if (!res.ok) throw new Error(`Groq error ${res.status}: ${await res.text()}`);
