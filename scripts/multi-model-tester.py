@@ -340,16 +340,7 @@ def create_test_branches_and_prs():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     created_prs = []
     
-    # Create benchmark test file
-    print("📝 Creating benchmark test file...")
-    benchmark_content = create_benchmark_test_file()
-    
-    with open('/home/yan/projects/AI-TCC/src/benchmark-test.ts', 'w') as f:
-        f.write(benchmark_content)
-    
-    # Commit benchmark file to main
-    run_command("git add src/benchmark-test.ts")
-    run_command("git commit -m 'feat: Add comprehensive security benchmark test file with 27+ vulnerabilities'")
+    # Note: Benchmark file will be created only in test branches, not in main
     
     # Create workflow files for each model
     print("🔧 Creating PR-specific workflows...")
@@ -377,15 +368,14 @@ def create_test_branches_and_prs():
         # Create and switch to new branch
         run_command(f"git checkout -b {branch_name}")
         
-        # Modify the original benchmark file directly 
-        # This creates a clean diff that works well with GitHub's inline comment API
+        # Create benchmark file in this branch (not in main)
+        # This ensures the file only exists in test PRs for proper GitHub diff detection
         benchmark_path = '/home/yan/projects/AI-TCC/src/benchmark-test.ts'
         
-        # Read the original content
-        with open(benchmark_path, 'r') as f:
-            original_content = f.read()
+        # Create base benchmark content
+        base_content = create_benchmark_test_file()
         
-        # Add model-specific header and inject vulnerabilities throughout
+        # Add model-specific header and vulnerabilities
         model_header = f"""// AI Model Security Test: {model_name.upper()}
 // Test Branch: {branch_name}  
 // Generated: {datetime.now().isoformat()}
@@ -393,7 +383,7 @@ def create_test_branches_and_prs():
 
 """
         
-        # Add some obvious vulnerabilities at the end to ensure detection
+        # Add model-specific vulnerabilities at the end
         additional_vulns = f"""
 
 // Additional {model_name.upper()} Test Vulnerabilities
@@ -413,7 +403,7 @@ function testVulnerability_{model_name.replace('-', '_')}() {{
 """
         
         # Combine content
-        modified_content = model_header + original_content + additional_vulns
+        modified_content = model_header + base_content + additional_vulns
         
         with open(benchmark_path, 'w') as f:
             f.write(modified_content)
