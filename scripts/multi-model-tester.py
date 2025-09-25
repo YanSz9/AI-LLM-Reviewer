@@ -377,15 +377,28 @@ def create_test_branches_and_prs():
         # Create and switch to new branch
         run_command(f"git checkout -b {branch_name}")
         
-        # Create a trigger file to activate the workflow
-        trigger_content = f"# {model_name.upper()} Test Branch\n\nTesting AI model: {model_name}\nCreated: {datetime.now().isoformat()}\n"
+        # Modify the benchmark test file to trigger AI review
+        # Add a comment at the top to indicate which model is being tested
+        benchmark_path = '/home/yan/projects/AI-TCC/src/benchmark-test.ts'
         
-        with open(f'/home/yan/projects/AI-TCC/trigger-{model_name}.md', 'w') as f:
-            f.write(trigger_content)
+        with open(benchmark_path, 'r') as f:
+            original_content = f.read()
         
-        # Commit trigger file
-        run_command(f"git add trigger-{model_name}.md")
-        run_command(f"git commit -m 'test: Add trigger for {model_name} AI review'")
+        # Add model-specific comment at the top
+        model_comment = f"""// AI Model Test: {model_name.upper()}
+// Test Branch: {branch_name}
+// Generated: {datetime.now().isoformat()}
+// This file contains 27+ intentional security vulnerabilities for AI review testing
+
+"""
+        modified_content = model_comment + original_content
+        
+        with open(benchmark_path, 'w') as f:
+            f.write(modified_content)
+        
+        # Commit the modified benchmark file
+        run_command(f"git add {benchmark_path}")
+        run_command(f"git commit -m 'test: Update benchmark file for {model_name} AI review'")
         run_command(f"git push origin {branch_name}")
         
         # Create PR

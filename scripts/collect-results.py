@@ -223,7 +223,7 @@ def generate_comparison_report(results: List[Dict]) -> str:
     # Find best performers
     best_detection = df.loc[df['Detection Rate %'].idxmax()]
     best_comments = df.loc[df['Total Comments'].idxmax()]
-    best_security = df.loc[df['Security Mentions'].idxmax()]
+    best_security = df.loc[df['Total Security Mentions'].idxmax()]
     
     html_content += f"""
         <div class="metrics">
@@ -240,7 +240,7 @@ def generate_comparison_report(results: List[Dict]) -> str:
             <div class="metric best">
                 <h3>🔒 Most Security Focus</h3>
                 <p><strong>{best_security['Model']}</strong></p>
-                <p>{best_security['Security Mentions']} mentions</p>
+                <p>{best_security['Total Security Mentions']} mentions</p>
             </div>
         </div>
     """
