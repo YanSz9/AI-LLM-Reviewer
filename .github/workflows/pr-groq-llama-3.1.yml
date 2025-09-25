@@ -1,4 +1,4 @@
-name: AI PR Review - GPT-4-TURBO
+name: AI PR Review - GROQ-LLAMA-3.1
 
 on:
   pull_request:
@@ -16,8 +16,8 @@ jobs:
         uses: YanSz9/AI-LLM-Reviewer@main
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          provider: openai
-          model: gpt-4-turbo
+          provider: groq
+          model: llama-3.1-8b-instant
           max-tokens: 3000
           temperature: 0.2
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

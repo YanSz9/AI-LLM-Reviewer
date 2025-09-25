@@ -1,51 +1,25 @@
-name: Claude-3.5-Sonnet PR Review
+name: AI PR Review - CLAUDE-3-5-SONNET
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: ["**"]
 
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
-  claude-review:
+  ai-review:
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.title, 'Claude') || contains(github.event.pull_request.head.ref, 'test-claude')
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: AI Code Reviewer
+        uses: YanSz9/AI-LLM-Reviewer@main
         with:
-          fetch-depth: 2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install deps
-        run: |
-          cd .github/actions/ai-pr-reviewer
-          npm ci --ignore-scripts
-
-      - name: Run Claude-3.5-Sonnet AI Review
-        uses: ./.github/actions/ai-pr-reviewer
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          provider: "anthropic"
-          model: "claude-3-5-sonnet-20241022"
-          max-tokens: "3000"
-          temperature: "0.2"
-          rules-path: ".github/ai-reviewer/rules.yml"
-          include-tests: "true"
-          include-style: "true"
-          inline-comments: "true"
-          max-inline-comments: "25"
-        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          provider: anthropic
+          model: claude-3-5-sonnet-20241022
+          max-tokens: 3000
+          temperature: 0.2
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-          OLLAMA_HOST: ${{ secrets.OLLAMA_HOST }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
