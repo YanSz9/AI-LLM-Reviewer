@@ -1,0 +1,50 @@
+name: Test groq-llama-3.1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [test-groq-llama-3.1-*]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test-groq-llama-3-1:
+    runs-on: ubuntu-latest
+    name: "Test groq-llama-3.1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd .github/actions/ai-pr-reviewer
+          npm ci --ignore-scripts
+
+      - name: Run groq-llama-3.1 Test
+        uses: ./.github/actions/ai-pr-reviewer
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          provider: "groq"
+          model: "llama-3.1-8b-instant"
+          temperature: "0.2"
+          max-tokens: "3000"
+          include-tests: "true"
+          include-style: "true"
+          
+      - name: Save Results
+        run: |
+          echo "Model: groq-llama-3.1" > test-results-groq-llama-3.1.txt
+          echo "Timestamp: $(date)" >> test-results-groq-llama-3.1.txt
+          echo "Configuration:" >> test-results-groq-llama-3.1.txt
+          echo "  Provider: groq" >> test-results-groq-llama-3.1.txt
+          echo "  Model: llama-3.1-8b-instant" >> test-results-groq-llama-3.1.txt
+          echo "  Temperature: 0.2" >> test-results-groq-llama-3.1.txt
