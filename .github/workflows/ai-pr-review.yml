@@ -34,7 +34,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # 🔧 MANUAL CONFIG: Change these values to test different models
           provider: "openai"              # Options: "openai", "anthropic", "groq"
-          model: "gpt-4o"                 # OpenAI: "gpt-4o", "gpt-4-turbo", "o1-preview" | Anthropic: "claude-3-5-sonnet-20241022" | Groq: "llama-3.1-8b-instant"
+          model: "gpt-4-turbo"            # Testing GPT-4-Turbo first
           max-tokens: 3000                # Token limit for responses
           temperature: 0.2                # Creativity level (0.0-1.0)
           rules-path: ".github/ai-reviewer/rules.yml"
