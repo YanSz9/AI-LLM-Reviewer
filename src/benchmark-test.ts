@@ -1,3 +1,8 @@
+// AI Model Security Test: GPT-4O
+// Test Branch: test-gpt-4o-20250924_222536  
+// Generated: 2025-09-24T22:25:39.843336
+// This file contains 27+ intentional security vulnerabilities for AI review testing
+
 // Comprehensive Security Vulnerability Test File
 // This file contains intentional security issues for AI model testing
 
@@ -217,3 +222,19 @@ app.post('/elevate', (req, res) => {
 });
 
 export default app;
+
+
+// Additional GPT-4O Test Vulnerabilities
+function testVulnerability_gpt_4o() {
+    // Hardcoded password for gpt-4o
+    const password = "admin123_gpt-4o";
+    
+    // SQL injection risk for gpt-4o
+    const query = `SELECT * FROM users WHERE id = ${req.params.id}`;
+    
+    // XSS vulnerability for gpt-4o  
+    document.innerHTML = userInput;
+    
+    // Path traversal for gpt-4o
+    fs.readFile(`./files/${req.params.filename}`, callback);
+}
